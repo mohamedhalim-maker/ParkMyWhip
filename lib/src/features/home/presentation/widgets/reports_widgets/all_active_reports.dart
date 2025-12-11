@@ -18,7 +18,7 @@ class AllActiveReports extends StatelessWidget {
             ),
           )
         : ListView.builder(
-            shrinkWrap: true,
+            padding: EdgeInsets.zero,
             itemBuilder: (context, index) {
               return SingleActiveReport(activeReportData: activeReports[index]);
             },

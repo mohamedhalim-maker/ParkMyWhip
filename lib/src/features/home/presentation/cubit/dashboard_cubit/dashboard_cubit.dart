@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:park_my_whip/src/core/config/injection.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/dashboard_cubit/dashboard_state.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/patrol_cubit/patrol_cubit.dart';
+import 'package:park_my_whip/src/features/home/presentation/cubit/report_cubit/reports_cubit.dart';
+import 'package:park_my_whip/src/features/home/presentation/cubit/tow_cubit/tow_cubit.dart';
 import 'package:park_my_whip/src/features/home/presentation/pages/dashboard_pages/history_page.dart';
 import 'package:park_my_whip/src/features/home/presentation/pages/dashboard_pages/patrol_page.dart';
 import 'package:park_my_whip/src/features/home/presentation/pages/dashboard_pages/profile_page.dart';
@@ -20,8 +22,14 @@ class DashboardCubit extends Cubit<DashboardState> {
       value: getIt<PatrolCubit>()..loadLocationData(),
       child: const PatrolPage(),
     ),
-    ReportsPage(),
-    TowACarPage(),
+    BlocProvider.value(
+      value: getIt<ReportsCubit>()..loadActiveReports(),
+      child: const ReportsPage(),
+    ),
+    BlocProvider.value(
+      value: getIt<TowCubit>()..resetState(),
+      child: const TowACarPage(),
+    ),
     HistoryPage(),
     ProfilePage(),
   ];

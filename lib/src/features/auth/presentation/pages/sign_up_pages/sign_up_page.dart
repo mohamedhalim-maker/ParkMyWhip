@@ -7,10 +7,10 @@ import 'package:park_my_whip/src/core/constants/text_style.dart';
 import 'package:park_my_whip/src/core/helpers/spacing.dart';
 import 'package:park_my_whip/src/core/widgets/common_app_bar.dart';
 import 'package:park_my_whip/src/core/widgets/common_button.dart';
+import 'package:park_my_whip/src/core/widgets/custom_text_field.dart';
 import 'package:park_my_whip/src/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:park_my_whip/src/features/auth/presentation/cubit/auth_state.dart';
 import 'package:park_my_whip/src/features/auth/presentation/widgets/already_have_account_text.dart';
-import 'package:park_my_whip/src/features/auth/presentation/widgets/custom_text_field.dart';
 
 class SignUpPage extends StatelessWidget {
   const SignUpPage({super.key});

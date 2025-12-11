@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:park_my_whip/src/core/config/injection.dart';
 import 'package:park_my_whip/src/core/constants/colors.dart';
 import 'package:park_my_whip/src/core/constants/strings.dart';
 import 'package:park_my_whip/src/core/constants/text_style.dart';
@@ -26,10 +27,21 @@ class _ReportsTabWrapperState extends State<ReportsTabWrapper>
   void initState() {
     super.initState();
     _controller = TabController(length: 2, vsync: this);
+    _controller.addListener(_onTabChanged);
+  }
+
+  void _onTabChanged() {
+    if (_controller.indexIsChanging) return;
+    if (_controller.index == 0) {
+      getIt<ReportsCubit>().loadActiveReports();
+    } else if (_controller.index == 1) {
+      getIt<ReportsCubit>().loadHistoryReports();
+    }
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_onTabChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -46,9 +58,9 @@ class _ReportsTabWrapperState extends State<ReportsTabWrapper>
               return Expanded(
                 child: TabBarView(
                   controller: _controller,
-                  children: const [
-                    AllActiveReports(activeReports: []),
-                    AllHistoryReports(historyReports: []),
+                  children: [
+                    AllActiveReports(activeReports: state.activeReports),
+                    AllHistoryReports(historyReports: state.historyReports),
                   ],
                 ),
               );

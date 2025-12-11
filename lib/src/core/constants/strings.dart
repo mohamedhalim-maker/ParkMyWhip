@@ -80,7 +80,7 @@ class HomeStrings {
   static const String newTowingEntry = 'New towing entry';
   static const String enterPlateNumberTitle = 'Enter Plate Number';
   static const String plateNumber = 'Plate Number';
-  static const String plateNumberExample = 'ABC 123';
+  static const String plateNumberExample = 'AB12 CDE';
   static const String next = 'Next';
   static const String selectViolationReason = 'Select Violation reason';
   static const String unauthorizedParking = 'Unauthorized parking';
@@ -90,6 +90,10 @@ class HomeStrings {
   static const String image = 'Image';
   static const String attachImage = 'Attach image';
   static const String changeImage = 'Change image';
+  static const String selectImageSource = 'Select Image Source';
+  static const String camera = 'Camera';
+  static const String gallery = 'Gallery';
+  static const String cancel = 'Cancel';
   static const String addNotes = 'Add notes';
   static const String note = 'Note';
   static const String addCommentHint = 'Add your comment here...';

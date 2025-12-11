@@ -8,6 +8,7 @@ import 'package:park_my_whip/src/core/helpers/spacing.dart';
 import 'package:park_my_whip/src/core/widgets/common_form_button.dart';
 import 'package:park_my_whip/src/core/widgets/common_form_text_button.dart';
 import 'package:park_my_whip/src/features/home/data/models/active_reports_model.dart';
+import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/active_report_detail_sheet.dart';
 import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/car_details_and_submit_time.dart';
 import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/id_and_admin_role.dart';
 import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/plate_number_and_reported_by.dart';
@@ -51,7 +52,7 @@ class SingleActiveReport extends StatelessWidget {
             verticalSpace(12),
             Container(height: 1, color: AppColor.gray20),
             verticalSpace(12),
-            dismissAndViewButtons(),
+            dismissAndViewButtons(context),
           ],
         ),
       ),
@@ -77,12 +78,16 @@ class SingleActiveReport extends StatelessWidget {
         verticalSpace(4),
         Row(
           children: [
-            Text(
-              '“${activeReportData.additionalNotes}”',
-              style: AppTextStyles.urbanistFont14Grey800Bold1,
+            Expanded(
+              child: Text(
+                '"${activeReportData.additionalNotes}"',
+                style: AppTextStyles.urbanistFont14Grey800Bold1,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            Spacer(),
-            imageContainer(),
+            horizontalSpace(8),
+            Flexible(child: imageContainer()),
           ],
         ),
       ],
@@ -98,19 +103,24 @@ class SingleActiveReport extends StatelessWidget {
         border: Border.all(color: AppColor.redDark.withValues(alpha: 0.20)),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(TowMyWhipIcons.image, color: AppColor.richRed, size: 16),
           horizontalSpace(4),
-          Text(
-            activeReportData.attachedImage,
-            style: AppTextStyles.urbanistFont12RedDarkLight1_25,
+          Flexible(
+            child: Text(
+              activeReportData.attachedImage,
+              style: AppTextStyles.urbanistFont12RedDarkLight1_25,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget dismissAndViewButtons() {
+  Widget dismissAndViewButtons(BuildContext context) {
     return Row(
       children: [
         Expanded(
@@ -121,9 +131,23 @@ class SingleActiveReport extends StatelessWidget {
         ),
         horizontalSpace(8),
         Expanded(
-          child: CommonFormButton(text: HomeStrings.view, onPressed: () {}),
+          child: CommonFormButton(
+            text: HomeStrings.view,
+            onPressed: () => _showReportDetailSheet(context),
+          ),
         ),
       ],
+    );
+  }
+
+  void _showReportDetailSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: AppColor.black.withValues(alpha: 0.6),
+      builder: (context) => ActiveReportDetailSheet(report: activeReportData),
     );
   }
 }

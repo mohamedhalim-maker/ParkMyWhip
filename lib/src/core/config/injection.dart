@@ -3,6 +3,8 @@ import 'package:park_my_whip/src/features/auth/domain/validators.dart';
 import 'package:park_my_whip/src/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/dashboard_cubit/dashboard_cubit.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/patrol_cubit/patrol_cubit.dart';
+import 'package:park_my_whip/src/features/home/presentation/cubit/report_cubit/reports_cubit.dart';
+import 'package:park_my_whip/src/features/home/presentation/cubit/tow_cubit/tow_cubit.dart';
 
 final getIt = GetIt.instance;
 
@@ -25,4 +27,6 @@ void setupDependencyInjection() {
 
   getIt.registerLazySingleton<DashboardCubit>(() => DashboardCubit());
   getIt.registerLazySingleton<PatrolCubit>(() => PatrolCubit());
+  getIt.registerLazySingleton<ReportsCubit>(() => ReportsCubit());
+  getIt.registerLazySingleton<TowCubit>(() => TowCubit());
 }

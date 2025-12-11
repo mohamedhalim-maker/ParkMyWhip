@@ -29,6 +29,7 @@ class IdAndAdminRole extends StatelessWidget {
         horizontalSpace(4),
         ReportSmallContainer(
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 width: 5.w,
@@ -43,13 +44,15 @@ class IdAndAdminRole extends StatelessWidget {
                 adminRole,
                 style: AppTextStyles.urbanistFont10Grey700Medium1_54,
               ),
-              if (child != null) ...[
-                Spacer(),
-                ReportSmallContainer(color: AppColor.redDark, child: child!),
-              ],
+              
             ],
           ),
         ),
+      Spacer(),
+      if (child != null) ...[
+                horizontalSpace(8),
+                ReportSmallContainer(color: AppColor.redDark, child: child!),
+              ],
       ],
     );
   }

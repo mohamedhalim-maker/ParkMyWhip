@@ -18,7 +18,7 @@ class AllHistoryReports extends StatelessWidget {
             ),
           )
         : ListView.builder(
-            shrinkWrap: true,
+            padding: EdgeInsets.zero,
             itemBuilder: (context, index) {
               return SingleHistoryReport(
                 historyReportModel: historyReports[index],

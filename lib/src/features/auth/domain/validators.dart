@@ -89,4 +89,22 @@ class Validators {
     }
     return null;
   }
+
+  String? plateNumberValidator(String? value) {
+    if (value == null || value.isEmpty || value.trim() == '') {
+      return 'You need to fill this field';
+    }
+
+    final trimmedValue = value.trim().toUpperCase().replaceAll(' ', '');
+
+    // UK plate format: 2 letters + 2 numbers + 3 letters (e.g., AB12CDE)
+    // Also accepts old format: 1 letter + 1-3 numbers + 3 letters (e.g., A123BCD)
+    final ukPlateFormat = RegExp(r'^[A-Z]{2}\d{2}[A-Z]{3}$|^[A-Z]\d{1,3}[A-Z]{3}$');
+    
+    if (!ukPlateFormat.hasMatch(trimmedValue)) {
+      return 'Invalid UK plate format (e.g., AB12CDE)';
+    }
+
+    return null;
+  }
 }

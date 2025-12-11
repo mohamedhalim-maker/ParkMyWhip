@@ -49,5 +49,17 @@
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
+		
+		<!-- Camera permission -->
+		<key>NSCameraUsageDescription</key>
+		<string>ParkMyWhip needs camera access to take photos of vehicles that are parked in unauthorized locations. These photos are required for parking violation documentation.</string>
+		
+		<!-- Photo Library permission -->
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>ParkMyWhip needs access to your photo library to select existing photos of vehicles for parking violation reports.</string>
+		
+		<!-- Photo Library Add permission (iOS 11+) -->
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>ParkMyWhip needs permission to save photos of vehicles to your photo library for parking violation documentation.</string>
 	</dict>
 </plist>
