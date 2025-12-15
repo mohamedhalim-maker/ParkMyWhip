@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:park_my_whip/src/core/networking/app_style/app_theme.dart';
+import 'package:park_my_whip/src/core/app_style/app_theme.dart';
 import 'package:park_my_whip/src/core/routes/router.dart';
 import 'package:park_my_whip/src/core/routes/names.dart';
 

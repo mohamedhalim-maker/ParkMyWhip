@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:intl/intl.dart';
 import 'package:park_my_whip/src/core/config/injection.dart';
 import 'package:park_my_whip/src/core/constants/colors.dart';
 import 'package:park_my_whip/src/core/constants/strings.dart';
@@ -47,9 +46,12 @@ class Phase5Preview extends StatelessWidget {
                 ),
                 verticalSpace(24),
                 SummaryCard(
-                  id: '${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
+                  id: DateTime.now().millisecondsSinceEpoch
+                      .toString()
+                      .substring(7),
                   adminRole: HomeStrings.residentAdmin,
-                  carDetails: towingEntry.reason ?? HomeStrings.unauthorizedParking,
+                  carDetails:
+                      towingEntry.reason ?? HomeStrings.unauthorizedParking,
                   submitTime: DateTime.now(),
                   plateNumber: towingEntry.plateNumber,
                   reportedBy: 'Me',
@@ -104,7 +106,8 @@ class _AttachedImagePreview extends StatelessWidget {
           return Center(
             child: CircularProgressIndicator(
               value: progress.expectedTotalBytes != null
-                  ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes!
+                  ? progress.cumulativeBytesLoaded /
+                        progress.expectedTotalBytes!
                   : null,
               color: AppColor.redDark,
             ),
@@ -144,7 +147,11 @@ class _ImageFallback extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.image_not_supported_outlined, color: AppColor.grey700, size: 48),
+            Icon(
+              Icons.image_not_supported_outlined,
+              color: AppColor.grey700,
+              size: 48,
+            ),
             verticalSpace(8),
             Text(
               'Image unavailable',

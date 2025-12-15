@@ -7,7 +7,6 @@ import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widg
 import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/all_history_reports.dart';
 import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/reports_tap_header.dart';
 import 'package:park_my_whip/src/core/helpers/spacing.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/filter_bottom_sheet.dart';
 import 'package:park_my_whip/src/features/home/presentation/widgets/common/filter_section.dart';
 import 'package:park_my_whip/src/features/home/presentation/helpers/report_filter_helper.dart';
@@ -60,6 +59,7 @@ class _ReportsTabWrapperState extends State<ReportsTabWrapper>
           /// ----- TAB BAR -----
           ReportsTapHeader(controller: _controller),
           verticalSpace(12),
+
           /// ----- FILTER SECTION (shown only on History tab) -----
           AnimatedBuilder(
             animation: _controller,

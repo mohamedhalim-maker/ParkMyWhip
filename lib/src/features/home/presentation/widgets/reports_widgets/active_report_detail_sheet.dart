@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:intl/intl.dart';
 import 'package:park_my_whip/src/core/constants/colors.dart';
 import 'package:park_my_whip/src/core/constants/strings.dart';
 import 'package:park_my_whip/src/core/constants/text_style.dart';
@@ -14,10 +13,6 @@ class ActiveReportDetailSheet extends StatelessWidget {
   const ActiveReportDetailSheet({super.key, required this.report});
 
   final ActiveReportModel report;
-
-  String get _formattedSubmitTime =>
-      DateFormat('dd/MM/yyyy, HH:mm:ss').format(report.submitTime);
-
   @override
   Widget build(BuildContext context) {
     final viewInsets = MediaQuery.viewInsetsOf(context);
@@ -34,7 +29,7 @@ class ActiveReportDetailSheet extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Container(
-          height:747.h,
+          height: 747.h,
           padding: EdgeInsets.only(bottom: viewInsets.bottom),
           decoration: BoxDecoration(
             color: Colors.transparent,
@@ -54,7 +49,11 @@ class ActiveReportDetailSheet extends StatelessWidget {
                     alignment: Alignment.topRight,
                     child: IconButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      icon: Icon(TowMyWhipIcons.close, color: AppColor.grey700, size: 16),
+                      icon: Icon(
+                        TowMyWhipIcons.close,
+                        color: AppColor.grey700,
+                        size: 16,
+                      ),
                     ),
                   ),
                   SummaryCard(
@@ -110,7 +109,7 @@ class _AttachedImagePreview extends StatelessWidget {
                 child: CircularProgressIndicator(
                   value: progress.expectedTotalBytes != null
                       ? progress.cumulativeBytesLoaded /
-                          progress.expectedTotalBytes!
+                            progress.expectedTotalBytes!
                       : null,
                 ),
               );
@@ -157,4 +156,3 @@ class _ImageFallback extends StatelessWidget {
     );
   }
 }
-
