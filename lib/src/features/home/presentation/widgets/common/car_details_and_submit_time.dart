@@ -16,6 +16,7 @@ class CarDetailsAndSubmitTime extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(carDetails, style: AppTextStyles.urbanistFont16Grey800Bold1),
         verticalSpace(8),

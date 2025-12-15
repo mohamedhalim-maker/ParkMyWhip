@@ -9,9 +9,9 @@ import 'package:park_my_whip/src/core/widgets/common_form_button.dart';
 import 'package:park_my_whip/src/core/widgets/common_form_text_button.dart';
 import 'package:park_my_whip/src/features/home/data/models/active_reports_model.dart';
 import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/active_report_detail_sheet.dart';
-import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/car_details_and_submit_time.dart';
-import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/id_and_admin_role.dart';
-import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/plate_number_and_reported_by.dart';
+import 'package:park_my_whip/src/features/home/presentation/widgets/common/car_details_and_submit_time.dart';
+import 'package:park_my_whip/src/features/home/presentation/widgets/common/id_and_admin_role.dart';
+import 'package:park_my_whip/src/features/home/presentation/widgets/common/plate_number_and_reported_by.dart';
 
 class SingleActiveReport extends StatelessWidget {
   const SingleActiveReport({super.key, required this.activeReportData});

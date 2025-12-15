@@ -28,6 +28,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  flutter_secure_storage: ^10.0.0
   flutter:
     sdk: flutter
 
@@ -47,7 +48,7 @@ dependencies:
   google_fonts: ^6.3.2
 
   # Local Storage used for persisting simple data
-  shared_preferences: ^2.5.3
+  shared_preferences: ^2.2.3
 
   # Localization & Formatting used for dates and numbers
   intl: ^0.19.0
@@ -60,6 +61,9 @@ dependencies:
 
   # Image Picker used for camera and gallery access
   image_picker: '>=1.1.2'
+
+  # Shimmer used for loading animations
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:
@@ -87,6 +91,7 @@ flutter:
   # Assets
   assets:
     - assets/images/logo.png
+    - assets/images/
 
   # Fonts
   fonts:

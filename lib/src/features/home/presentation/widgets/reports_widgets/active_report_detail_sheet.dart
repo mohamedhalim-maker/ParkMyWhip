@@ -7,10 +7,8 @@ import 'package:park_my_whip/src/core/constants/text_style.dart';
 import 'package:park_my_whip/src/core/constants/tow_my_whip_icons_icons.dart';
 import 'package:park_my_whip/src/core/helpers/spacing.dart';
 import 'package:park_my_whip/src/core/widgets/common_button.dart';
+import 'package:park_my_whip/src/features/home/presentation/widgets/common/summary_card.dart';
 import 'package:park_my_whip/src/features/home/data/models/active_reports_model.dart';
-import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/car_details_and_submit_time.dart';
-import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/id_and_admin_role.dart';
-import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/plate_number_and_reported_by.dart';
 
 class ActiveReportDetailSheet extends StatelessWidget {
   const ActiveReportDetailSheet({super.key, required this.report});
@@ -48,7 +46,7 @@ class ActiveReportDetailSheet extends StatelessWidget {
               borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
             ),
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -59,7 +57,16 @@ class ActiveReportDetailSheet extends StatelessWidget {
                       icon: Icon(TowMyWhipIcons.close, color: AppColor.grey700, size: 16),
                     ),
                   ),
-                  _ReportSummaryCard(report: report, formattedTime: _formattedSubmitTime),
+                  SummaryCard(
+                    id: report.id,
+                    adminRole: report.adminRole,
+                    carDetails: report.carDetails,
+                    submitTime: report.submitTime,
+                    plateNumber: report.plateNumber,
+                    reportedBy: report.reportedBy,
+                    additionalNotes: report.additionalNotes,
+                    backgroundColor: AppColor.veryLightRed,
+                  ),
                   verticalSpace(24),
                   Text(
                     HomeStrings.attachedImagesLabel,
@@ -84,49 +91,6 @@ class ActiveReportDetailSheet extends StatelessWidget {
     );
   }
 }
-
-class _ReportSummaryCard extends StatelessWidget {
-  const _ReportSummaryCard({required this.report, required this.formattedTime});
-
-  final ActiveReportModel report;
-  final String formattedTime;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(20.w),
-      decoration: BoxDecoration(
-        color: AppColor.veryLightRed,
-        borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: AppColor.gray10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          IdAndAdminRole(id: report.id, adminRole: report.adminRole),
-          verticalSpace(8),
-          CarDetailsAndSubmitTime(carDetails: report.carDetails, submitTime: report.submitTime),
-          verticalSpace(12),
-          Container(height: 1, color: AppColor.gray20),
-          verticalSpace(12),
-          PlateNumberAndReportedBy(plateNumber: report.plateNumber, reportedBy: report.reportedBy),
-          verticalSpace(12),
-          Text(
-            HomeStrings.additionalNotesLabel,
-            style: AppTextStyles.urbanistFont10Grey700Regular1_3,
-          ),
-          verticalSpace(2),
-          Text(
-            '"${report.additionalNotes}"',
-            style: AppTextStyles.urbanistFont12Grey700SemiBold1_2,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 
 class _AttachedImagePreview extends StatelessWidget {
   const _AttachedImagePreview({required this.imagePath});

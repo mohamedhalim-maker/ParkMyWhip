@@ -25,8 +25,12 @@ class PatrolPage extends StatelessWidget {
                     placeName: state.selectedLocation,
                     permits: state.permits,
                     isPermitSearchActive: state.isPermitSearchActive,
+                    isLoading: state.isLoadingPermits,
                   )
-                : PatrolPageContent(locations: state.locations);
+                : PatrolPageContent(
+                    locations: state.locations,
+                    isLoading: state.isLoadingLocations,
+                  );
           },
         ),
       ),

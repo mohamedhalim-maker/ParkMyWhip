@@ -6,6 +6,7 @@ class TowingEntryModel {
   final String? notes;
   final DateTime? towDate;
   final String? attachedImage;
+  final String? reportedBy;
 
   TowingEntryModel({
     required this.plateNumber,
@@ -15,6 +16,7 @@ class TowingEntryModel {
     this.notes,
     this.towDate,
     this.attachedImage,
+    this.reportedBy,
   });
 
   TowingEntryModel copyWith({
@@ -25,6 +27,7 @@ class TowingEntryModel {
     String? notes,
     DateTime? towDate,
     String? attachedImage,
+    String? reportedBy,
   }) {
     return TowingEntryModel(
       plateNumber: plateNumber ?? this.plateNumber,
@@ -34,6 +37,7 @@ class TowingEntryModel {
       notes: notes ?? this.notes,
       towDate: towDate ?? this.towDate,
       attachedImage: attachedImage ?? this.attachedImage,
+      reportedBy: reportedBy ?? this.reportedBy,
     );
   }
 
@@ -46,6 +50,7 @@ class TowingEntryModel {
       'notes': notes,
       'towDate': towDate?.toIso8601String(),
       'attachedImage': attachedImage,
+      'reportedBy': reportedBy,
     };
   }
 
@@ -58,6 +63,7 @@ class TowingEntryModel {
       notes: json['notes'],
       towDate: json['towDate'] != null ? DateTime.parse(json['towDate']) : null,
       attachedImage: json['attachedImage'],
+      reportedBy: json['reportedBy'],
     );
   }
 }

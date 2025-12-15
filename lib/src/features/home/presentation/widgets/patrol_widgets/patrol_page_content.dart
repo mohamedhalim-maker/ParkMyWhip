@@ -7,12 +7,17 @@ import 'package:park_my_whip/src/features/home/data/models/location_model.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/patrol_cubit/patrol_cubit.dart';
 import 'package:park_my_whip/src/features/home/presentation/widgets/patrol_widgets/all_patrol_locations.dart';
 import 'package:park_my_whip/src/features/home/presentation/widgets/patrol_widgets/logo_and_app_name.dart';
-import 'package:park_my_whip/src/features/home/presentation/widgets/search_text_filed.dart';
+import 'package:park_my_whip/src/features/home/presentation/widgets/common/search_text_filed.dart';
 
 class PatrolPageContent extends StatelessWidget {
-  const PatrolPageContent({super.key, required this.locations});
+  const PatrolPageContent({
+    super.key,
+    required this.locations,
+    required this.isLoading,
+  });
 
   final List<LocationModel> locations;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +44,7 @@ class PatrolPageContent extends StatelessWidget {
           searchActiveHint: HomeStrings.searchSiteHint,
         ),
         verticalSpace(20),
-        AllPatrolLocations(locations: locations),
+        AllPatrolLocations(locations: locations, isLoading: isLoading),
       ],
     );
   }

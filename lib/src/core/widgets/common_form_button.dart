@@ -12,6 +12,8 @@ class CommonFormButton extends StatelessWidget {
     this.leadingIcon,
     this.trailingIcon,
     this.color,
+    this.height = 28,
+    this.width,
   });
 
   final String text;
@@ -19,12 +21,14 @@ class CommonFormButton extends StatelessWidget {
   final IconData? leadingIcon;
   final IconData? trailingIcon;
   final Color? color;
+  final double height;
+  final double? width;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 28.h,
-      width: double.infinity,
+      height: height.h,
+      width: width?.w ?? double.infinity,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
@@ -40,13 +44,13 @@ class CommonFormButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (leadingIcon != null) ...[
-              Icon(leadingIcon!, color: AppColor.white, size: 24),
+              Icon(leadingIcon!, color: AppColor.white, size: 12),
               horizontalSpace(8),
             ],
             Text(text, style: AppTextStyles.urbanistFont10WhiteMedium1),
             if (trailingIcon != null) ...[
               horizontalSpace(8),
-              Icon(trailingIcon!, color: AppColor.white, size: 24),
+              Icon(trailingIcon!, color: AppColor.white, size: 12),
             ],
           ],
         ),

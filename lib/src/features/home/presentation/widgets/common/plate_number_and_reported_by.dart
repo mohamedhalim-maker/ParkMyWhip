@@ -8,10 +8,12 @@ class PlateNumberAndReportedBy extends StatelessWidget {
     super.key,
     required this.plateNumber,
     required this.reportedBy,
+    this.reportedByLabel,
   });
 
   final String plateNumber;
   final String reportedBy;
+  final String? reportedByLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,7 @@ class PlateNumberAndReportedBy extends StatelessWidget {
             ),
             Spacer(),
             Text(
-              HomeStrings.reportedByLabel,
+              reportedByLabel ?? HomeStrings.reportedByLabel,
               style: AppTextStyles.urbanistFont10Grey700Regular1_3,
             ),
           ],
@@ -33,9 +35,23 @@ class PlateNumberAndReportedBy extends StatelessWidget {
         verticalSpace(2),
         Row(
           children: [
-            Text(plateNumber, style: AppTextStyles.urbanistFont14Grey800Bold1),
-            Spacer(),
-            Text(reportedBy, style: AppTextStyles.urbanistFont14Grey800Bold1),
+            Expanded(
+              child: Text(
+                plateNumber,
+                style: AppTextStyles.urbanistFont14Grey800Bold1,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Expanded(
+              child: Text(
+                reportedBy,
+                style: AppTextStyles.urbanistFont14Grey800Bold1,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+              ),
+            ),
           ],
         ),
       ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:park_my_whip/src/core/config/injection.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/dashboard_cubit/dashboard_state.dart';
+import 'package:park_my_whip/src/features/home/presentation/cubit/history_cubit/history_cubit.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/patrol_cubit/patrol_cubit.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/report_cubit/reports_cubit.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/tow_cubit/tow_cubit.dart';
@@ -30,8 +31,11 @@ class DashboardCubit extends Cubit<DashboardState> {
       value: getIt<TowCubit>()..resetState(),
       child: const TowACarPage(),
     ),
-    HistoryPage(),
-    ProfilePage(),
+    BlocProvider.value(
+      value: getIt<HistoryCubit>(),
+      child: const HistoryPage(),
+    ),
+    const ProfilePage(),
   ];
 
   /// used to navigate throw pages.
@@ -45,6 +49,11 @@ class DashboardCubit extends Cubit<DashboardState> {
     // }
     pageController.jumpToPage(index);
     emit(state.copyWith(currentIndex: index));
+
+    if (index == 3) {
+      // Force a refresh so the shimmer is visible whenever the History tab opens.
+      getIt<HistoryCubit>().loadTowingHistory();
+    }
   }
 
   /// to prevent multiple calls to changePage

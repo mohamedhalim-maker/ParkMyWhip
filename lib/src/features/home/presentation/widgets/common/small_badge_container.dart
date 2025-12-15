@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:park_my_whip/src/core/constants/colors.dart';
 
-class ReportSmallContainer extends StatelessWidget {
-  const ReportSmallContainer({super.key, required this.child, this.color});
+class SmallBadgeContainer extends StatelessWidget {
+  const SmallBadgeContainer({super.key, required this.child, this.color});
 
   final Widget child;
   final Color? color;

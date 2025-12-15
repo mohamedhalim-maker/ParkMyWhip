@@ -266,6 +266,15 @@ class AppTextStyles {
     height: 18 / 14, // ~1.28
     letterSpacing: 0,
   );
+
+  static TextStyle urbanistFont14Grey700Medium1_28 = GoogleFonts.urbanist(
+    fontSize: 14.sp,
+    fontWeight: FontWeightHelper.medium,
+    color: AppColor.grey700, // #364753
+    height: 18 / 14, // ~1.28
+    letterSpacing: 0,
+  );
+
   static TextStyle urbanistFont14Grey800Bold1 = GoogleFonts.urbanist(
     fontSize: 14.sp,
     fontWeight: FontWeightHelper.bold,

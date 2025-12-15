@@ -24,9 +24,13 @@ lib/
     │   │   ├── strings.dart           # Static text constants
     │   │   └── assets.dart            # Asset path constants
     │   ├── helpers/
+    │   │   ├── shared_pref_helper.dart # SharedPreferences + secure storage wrapper
     │   │   └── spacing.dart           # verticalSpace() / horizontalSpace() helpers
     │   ├── models/
-    │   │   └── common_model.dart      # Shared data structures
+    │   │   ├── common_model.dart      # Shared data structures
+    │   │   └── supabase_user_model.dart # Cached Supabase profile mirror
+    │   ├── services/
+    │   │   └── supabase_user_service.dart # Local storage access to Supabase user
     │   ├── networking/
     │   │   └── network_exceptions.dart # Custom exception classes
     │   ├── routes/
@@ -76,9 +80,15 @@ lib/
                 │   ├── report_cubit/         # Active/history reports state
                 │   │   ├── reports_cubit.dart
                 │   │   └── reports_state.dart
-                │   └── patrol_cubit/         # Patrol locations state
-                │       ├── patrol_cubit.dart
-                │       └── patrol_state.dart
+                │   ├── patrol_cubit/         # Patrol locations state
+                │   │   ├── patrol_cubit.dart
+                │   │   └── patrol_state.dart
+                │   ├── history_cubit/        # Towing history state
+                │   │   ├── history_cubit.dart
+                │   │   └── history_state.dart
+                │   └── tow_cubit/            # Tow a car state
+                │       ├── tow_cubit.dart
+                │       └── tow_state.dart
                 ├── pages/
                 │   ├── dashboard_page.dart   # Main container with bottom nav
                 │   └── dashboard_pages/
@@ -107,13 +117,29 @@ lib/
                     │   ├── patrol_header_widget.dart
                     │   ├── all_patrol_locations.dart
                     │   └── logo_and_app_name.dart
-                    └── active_permits_widgets/ # Permits feature components
-                        ├── active_permit_page_content.dart
-                        ├── all_active_permit_list.dart
-                        ├── single_permit.dart
-                        ├── permit_small_container.dart
-                        ├── permits_found.dart
-                        └── no_permits_found.dart
+                    ├── active_permits_widgets/ # Permits feature components
+                    │   ├── active_permit_page_content.dart
+                    │   ├── all_active_permit_list.dart
+                    │   ├── single_permit.dart
+                    │   ├── permit_small_container.dart
+                    │   ├── permits_found.dart
+                    │   └── no_permits_found.dart
+                    ├── history_widgets/      # Towing history components
+                    │   ├── history_page_content.dart
+                    │   ├── all_towing_history.dart
+                    │   └── single_towing_entry.dart
+                    ├── tow_this_car_widgets/ # Tow a car components
+                    │   ├── phase_1_enter_plate_number.dart
+                    │   ├── phase_2_select_violation.dart
+                    │   ├── phase_3_attach_image.dart
+                    │   ├── phase_4_add_notes.dart
+                    │   ├── phase_5_preview.dart
+                    │   └── phase_6_success.dart
+                    └── common/               # Shared widgets
+                        ├── dashboard_nav_bar.dart
+                        ├── filter_section.dart
+                        ├── summary_card.dart
+                        └── search_text_filed.dart
 ```
 
 ---
@@ -454,6 +480,19 @@ Navigator.pushNamed(context, RoutesName.reports);
 2. **State management**: `DashboardCubit` tracks current tab index
 3. **Each tab**: Separate page in `dashboard_pages/`
 
+### History Feature
+1. **Towing history management**: Displays all past towing entries
+2. **State management**: `HistoryCubit` manages towing history and filters
+3. **Filtering system**: Reuses `FilterSection` and `FilterBottomSheet` from common widgets
+   - Time range filter (Last week, Last month, Last year)
+   - Violation type filter (Unauthorized parking, Expired permit, etc.)
+4. **Reusable components**:
+   - `SingleTowingEntry`: Card displaying individual towing entry
+   - `AllTowingHistory`: List view of all towing history
+   - `HistoryPageContent`: Main content container with title and filters
+5. **Navigation**: Back button navigates to patrol page (index 0)
+6. **Filter helper**: `TowingFilterHelper` applies filters to towing history data
+
 ### Authentication Feature
 1. **Multi-step sign-up**: SignUp → OTP → Create Password
 2. **Validation**: Centralized in `domain/validators.dart`
@@ -510,7 +549,7 @@ class ReportsCubit extends Cubit<ReportsState> {
 - **google_fonts** (^6.3.2): Custom fonts (Urbanist, Figtree, Plus Jakarta Sans)
 
 ### Storage & Data
-- **shared_preferences** (^2.5.3): Local key-value storage
+- **shared_preferences** (^2.2.3): Local key-value storage for cached Supabase user profile
 - **intl** (^0.19.0): Date/number formatting
 
 ### Forms
@@ -566,6 +605,38 @@ class ReportsCubit extends Cubit<ReportsState> {
 - ✅ Migrated from `context.read()` to `getIt<Cubit>()` for accessing singletons
 - ✅ Extracted reusable report components: `IdAndAdminRole`, `CarDetailsAndSubmitTime`, `PlateNumberAndReportedBy`
 - ✅ Fixed Spacer rendering errors by removing ScrollView from fixed-height sheets
+
+### 2025-02-18
+- ✅ Documented and refactored `TowCubit` to improve readability, add image-picking constants, and prevent accidental `copyWith` resets via sentinels in `TowState`
+- ✅ Phase 3 (image) Next button is now always enabled for QA, and validation bypass can be toggled once backend requirements return
+
+### 2025-02-20
+- ✅ Implemented complete History page with towing history management
+- ✅ Created `HistoryCubit` for managing towing history state and filters
+- ✅ Built reusable history widgets: `SingleTowingEntry`, `AllTowingHistory`, `HistoryPageContent`
+- ✅ Integrated filtering system using existing `FilterSection` and `FilterBottomSheet` components
+- ✅ Added `TowingFilterHelper` for applying time range and violation type filters
+- ✅ Registered `HistoryCubit` in dependency injection
+- ✅ Connected history page to patrol page via back navigation
+
+### 2025-02-24
+- ✅ Added shimmer-driven loading states for both active and history reports so QA can mirror the patrol loading UX.
+- ✅ Extended `ReportsState`/`ReportsCubit` with explicit loading flags plus dedicated skeleton widgets for each tab.
+
+### 2025-02-25
+- ✅ Enriched `HistoryCubit` mock data with extremely long strings, edge-case single-character entries, and far-past timestamps to stress-test every history UI layout.
+
+### 2025-02-26
+- ✅ Relocated `SingleTowingEntry` from `patrol_widgets` to `history_widgets` so the file hierarchy matches the widget's primary consumer.
+
+### 2025-02-27
+- ✅ Added `HistoryListShimmer` plus a dedicated loading flag in `HistoryCubit` so the towing history list mirrors the patrol/reports skeleton experience.
+- ✅ Dashboard navigation now re-triggers `HistoryCubit.loadTowingHistory()` so every visit to the History tab shows the 2s shimmer delay and resets any open detail panes before fresh data is filtered.
+
+### 2025-02-28
+- ✅ Introduced `SupabaseUserModel` with created/updated timestamps, metadata, and serialization helpers so profile data can mirror Supabase records once backend login is wired up.
+- ✅ Added `SupabaseUserService` backed by `SharedPreferences` to persist both seeded QA data and future authenticated profiles, plus registered the service inside GetIt for app-wide access.
+- ✅ Created `SharedPrefHelper` plus centralized key constants so any feature can use SharedPreferences or FlutterSecureStorage with consistent key names.
 
 ---
 

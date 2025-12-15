@@ -57,15 +57,21 @@ class SinglePermit extends StatelessWidget {
   Widget idAndPermitWithDate() {
     return Row(
       children: [
-        PermitSmallContainer(
+        Flexible (
+          child:PermitSmallContainer(
           child: Text(
             'ID: ${permit.id}',
             style: AppTextStyles.urbanistFont10Grey800SemiBold1_54,
+            maxLines:1,
+            overflow:TextOverflow.ellipsis,
           ),
+        ),
         ),
         horizontalSpace(4),
         PermitSmallContainer(
           child: RichText(
+                maxLines:1,
+            overflow:TextOverflow.ellipsis,
             text: TextSpan(
               children: [
                 TextSpan(
@@ -81,20 +87,18 @@ class SinglePermit extends StatelessWidget {
           ),
         ),
         Spacer(),
-        PermitSmallContainer(
-          child: RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: HomeStrings.expires,
-                  style: AppTextStyles.urbanistFont10Grey700Medium1_54,
-                ),
-                TextSpan(
-                  text: DateFormat('dd/MM/yyyy').format(permit.expiryDate),
-                  style: AppTextStyles.urbanistFont10Grey800SemiBold1_54,
-                ),
-              ],
-            ),
+        RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: HomeStrings.expires,
+                style: AppTextStyles.urbanistFont10Grey700Medium1_54,
+              ),
+              TextSpan(
+                text: DateFormat('dd/MM/yyyy').format(permit.expiryDate),
+                style: AppTextStyles.urbanistFont10Grey800SemiBold1_54,
+              ),
+            ],
           ),
         ),
       ],
@@ -120,18 +124,27 @@ class SinglePermit extends StatelessWidget {
         verticalSpace(2),
         Row(
           children: [
-            Text(
+            Expanded(
+              child:Text(
               permit.plateSpotInfo.plateNumber,
               style: AppTextStyles.urbanistFont14Grey800Bold1,
+              maxLines:1,
+              overflow:TextOverflow.ellipsis,
             ),
-            Spacer(),
-            Text(
+            ),
+            Expanded (
+              child:Text(
               permit.plateSpotInfo.spotNumber,
               style: AppTextStyles.urbanistFont14Grey800Bold1,
-            ),
+              maxLines:1,
+              overflow:TextOverflow.ellipsis,
+               textAlign: TextAlign.right,
+            ),),
+            
           ],
         ),
       ],
     );
   }
 }
+

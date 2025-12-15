@@ -8,6 +8,7 @@ import 'package:park_my_whip/src/core/widgets/common_secondary_button.dart';
 import 'package:park_my_whip/src/features/home/data/models/permit_data_model.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/patrol_cubit/patrol_cubit.dart';
 import 'package:park_my_whip/src/features/home/presentation/widgets/active_permits_widgets/no_permits_found.dart';
+import 'package:park_my_whip/src/features/home/presentation/widgets/active_permits_widgets/permit_shimmer.dart';
 import 'package:park_my_whip/src/features/home/presentation/widgets/active_permits_widgets/single_permit.dart';
 
 class AllActivePermitList extends StatelessWidget {
@@ -15,12 +16,16 @@ class AllActivePermitList extends StatelessWidget {
     super.key,
     required this.permits,
     required this.isPermitSearchActive,
+    required this.isLoading,
   });
   final List<PermitModel> permits;
   final bool isPermitSearchActive;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) return PermitShimmer();
+    
     return permits.isEmpty
         ? isPermitSearchActive
               ? NoPermitsFound()

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:park_my_whip/src/core/constants/colors.dart';
 import 'package:park_my_whip/src/core/constants/text_style.dart';
@@ -15,6 +16,8 @@ class CustomTextField extends StatefulWidget {
     this.textInputAction,
     this.isPassword = false,
     this.onChanged,
+    this.maxLines = 1,
+    this.maxLength,
   });
 
   final String title;
@@ -25,6 +28,12 @@ class CustomTextField extends StatefulWidget {
   final TextInputAction? textInputAction;
   final bool isPassword;
   final void Function(String)? onChanged;
+  
+  /// Maximum number of lines for the text field (default: 1)
+  final int maxLines;
+  
+  /// Maximum number of characters allowed (optional, no limit if null)
+  final int? maxLength;
 
   @override
   State<CustomTextField> createState() => _CustomTextFieldState();
@@ -32,12 +41,32 @@ class CustomTextField extends StatefulWidget {
 
 class _CustomTextFieldState extends State<CustomTextField> {
   bool _obscureText = true;
+  bool _isFocused = false;
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _obscureText = widget.isPassword;
+    _focusNode.addListener(_handleFocusChange);
   }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_handleFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  /// Handles focus state changes to show/hide character counter
+  void _handleFocusChange() {
+    setState(() {
+      _isFocused = _focusNode.hasFocus;
+    });
+  }
+
+  /// Returns current character count from the text field
+  int get _currentLength => widget.controller?.text.length ?? 0;
 
   @override
   Widget build(BuildContext context) {
@@ -59,12 +88,22 @@ class _CustomTextFieldState extends State<CustomTextField> {
         TextFormField(
           obscuringCharacter: '⦁',
           controller: widget.controller,
+          focusNode: _focusNode,
           keyboardType: widget.keyboardType,
           textInputAction: widget.textInputAction,
           obscureText: widget.isPassword && _obscureText,
           style: AppTextStyles.urbanistFont16Grey800Regular1_3,
+          maxLines: widget.isPassword ? 1 : widget.maxLines,
+          minLines: widget.isPassword ? 1 : null,
+          inputFormatters: widget.maxLength != null
+              ? [LengthLimitingTextInputFormatter(widget.maxLength)]
+              : null,
           onChanged: (value) {
             widget.onChanged?.call(value);
+            // Trigger rebuild to update character counter
+            if (widget.maxLength != null && _isFocused) {
+              setState(() {});
+            }
           },
           decoration: InputDecoration(
             hintText: widget.hintText,
@@ -114,6 +153,18 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 : null,
           ),
         ),
+
+        // Character Counter (shown when focused and maxLength is set)
+        if (_isFocused && widget.maxLength != null) ...[
+          verticalSpace(4),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '$_currentLength/${widget.maxLength}',
+              style: AppTextStyles.urbanistFont12Grey800Regular1_64,
+            ),
+          ),
+        ],
 
         // Error Message
         if (hasError) ...[

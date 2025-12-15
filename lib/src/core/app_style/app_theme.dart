@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../constants/colors.dart';
-import '../constants/text_style.dart';
+import 'package:park_my_whip/src/core/constants/colors.dart';
+import 'package:park_my_whip/src/core/constants/text_style.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {

@@ -7,22 +7,32 @@ import 'package:park_my_whip/src/features/home/data/models/towing_entry_model.da
 import 'package:park_my_whip/src/features/home/presentation/cubit/tow_cubit/tow_state.dart';
 import 'package:park_my_whip/src/features/home/presentation/widgets/tow_this_car_widgets/image_source_bottom_sheet.dart';
 
+/// Manages the Tow-a-Car multi-step wizard, handling validation, image picking,
+/// and progression logic across all phases.
 class TowCubit extends Cubit<TowState> {
+  static const Duration _imageProcessingDelay = Duration(milliseconds: 500);
+
   final Validators _validators = Validators();
   final TextEditingController plateNumberController = TextEditingController();
+  final TextEditingController notesController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
 
   TowCubit() : super(const TowState());
 
+  /// Resets the entire tow flow to its initial state and clears user input.
   void resetState() {
     plateNumberController.clear();
+    notesController.clear();
     emit(const TowState());
   }
 
+  /// Clears any error or success messages currently shown to the user.
   void clearMessages() {
     emit(state.copyWith(errorMessage: null, successMessage: null));
   }
 
+  /// Listens for plate field changes to enable/disable Phase 1 button and
+  /// re-run validation if an error was previously displayed.
   void onPlateNumberFieldChanged() {
     final text = plateNumberController.text;
     final shouldEnable = text.trim().isNotEmpty;
@@ -32,12 +42,14 @@ class TowCubit extends Cubit<TowState> {
       updatedError = _validators.plateNumberValidator(text);
     }
 
-    final shouldEmit = state.isPlateNumberButtonEnabled != shouldEnable || updatedError != state.plateNumberError;
+    final shouldEmit =
+        state.isPlateNumberButtonEnabled != shouldEnable || updatedError != state.plateNumberError;
     if (shouldEmit) {
       emit(state.copyWith(isPlateNumberButtonEnabled: shouldEnable, plateNumberError: updatedError));
     }
   }
 
+  /// Validates Phase 1 (plate number) and proceeds when input is valid.
   void validateAndProceedPhase1() {
     final error = _validators.plateNumberValidator(plateNumberController.text);
     if (error == null) {
@@ -49,22 +61,20 @@ class TowCubit extends Cubit<TowState> {
     }
   }
 
+  /// Stores the selected violation reason and enables the Phase 2 button.
   void selectViolation(String violation) {
     final updatedEntry = state.towingEntry?.copyWith(reason: violation);
-    emit(state.copyWith(
-      selectedViolation: violation,
-      isViolationButtonEnabled: true,
-      towingEntry: updatedEntry,
-    ));
+    emit(state.copyWith(selectedViolation: violation, isViolationButtonEnabled: true, towingEntry: updatedEntry));
   }
 
+  /// Proceeds past Phase 2 once a violation has been selected.
   void validateAndProceedPhase2() {
     if (state.selectedViolation != null && state.selectedViolation!.isNotEmpty) {
       nextPhase();
     }
   }
 
-  /// Shows bottom sheet to select image source (camera or gallery)
+  /// Displays the modal bottom sheet allowing the user to pick camera or gallery.
   void showImageSourcePicker(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -76,21 +86,19 @@ class TowCubit extends Cubit<TowState> {
     );
   }
 
-  /// Picks image from camera
+  /// Picks an image from the device camera.
   Future<void> _pickImageFromCamera() async {
     await _pickImage(ImageSource.camera);
   }
 
-  /// Picks image from gallery
+  /// Picks an image from the gallery/photos library.
   Future<void> _pickImageFromGallery() async {
     await _pickImage(ImageSource.gallery);
   }
 
-  /// Internal method to handle image picking from the specified source
-  /// Shows loading state while image is being processed
+  /// Handles the common image-picking logic (loading state + entry updates).
   Future<void> _pickImage(ImageSource source) async {
     try {
-      // Show loading state
       emit(state.copyWith(isImageLoading: true));
 
       final XFile? pickedFile = await _imagePicker.pickImage(
@@ -101,12 +109,11 @@ class TowCubit extends Cubit<TowState> {
       );
 
       if (pickedFile != null) {
-        // Simulate processing delay to show loading state
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future.delayed(_imageProcessingDelay);
 
         final imagePath = kIsWeb ? pickedFile.path : pickedFile.path;
         final updatedEntry = state.towingEntry?.copyWith(attachedImage: imagePath);
-        
+
         emit(state.copyWith(
           selectedImagePath: imagePath,
           isImageButtonEnabled: true,
@@ -114,7 +121,6 @@ class TowCubit extends Cubit<TowState> {
           towingEntry: updatedEntry,
         ));
       } else {
-        // User cancelled the picker
         emit(state.copyWith(isImageLoading: false));
       }
     } catch (e) {
@@ -123,45 +129,113 @@ class TowCubit extends Cubit<TowState> {
     }
   }
 
+  /// Validates Phase 3 (image) and proceeds when an image is selected.
   void validateAndProceedPhase3() {
-    if (state.selectedImagePath != null && state.selectedImagePath!.isNotEmpty) {
+    final hasSelectedImage = state.selectedImagePath?.isNotEmpty ?? false;
+
+    if (hasSelectedImage) {
       nextPhase();
     }
   }
 
+  /// Listens for notes field changes to enable/disable Phase 4 button.
+  void onNotesFieldChanged() {
+    final text = notesController.text;
+    final shouldEnable = text.trim().isNotEmpty;
+
+    if (state.isNotesButtonEnabled != shouldEnable) {
+      final updatedEntry = state.towingEntry?.copyWith(notes: text.trim());
+      emit(state.copyWith(
+        isNotesButtonEnabled: shouldEnable,
+        notes: text.trim(),
+        towingEntry: updatedEntry,
+      ));
+    }
+  }
+
+  /// Proceeds past Phase 4 once notes have been entered.
+  void validateAndProceedPhase4() {
+    if (state.notes != null && state.notes!.isNotEmpty) {
+      nextPhase();
+    }
+  }
+
+  /// Confirms the towing entry and submits it (Phase 5 final action).
+  Future<void> confirmTowing() async {
+    emit(state.copyWith(isLoading: true, errorMessage: null, successMessage: null));
+
+    try {
+      // Simulate API call or database save
+      await Future.delayed(const Duration(seconds: 2));
+
+      final plateNumber = state.towingEntry?.plateNumber ?? 'Unknown';
+      
+      // TODO: Replace with actual repository call to save towing entry
+      debugPrint('Towing entry confirmed: ${state.towingEntry?.toJson()}');
+
+      emit(state.copyWith(
+        isLoading: false,
+        successMessage: 'Towing confirmed for plate $plateNumber',
+        isConfirmed: true,
+        currentPhase: 6,
+      ));
+    } catch (e) {
+      debugPrint('Error confirming towing: $e');
+      emit(state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to confirm towing: ${e.toString()}',
+      ));
+    }
+  }
+
+  /// Navigates back to patrol page from any phase including success screen.
+  void backToPatrol() {
+    resetState();
+    // Note: Navigation to patrol page (changePage(0)) should be called from the UI
+  }
+
+  /// Navigates directly to a specific phase when it falls within 1-5.
   void goToPhase(int phase) {
     if (phase >= 1 && phase <= 5) {
       emit(state.copyWith(currentPhase: phase));
     }
   }
 
+  /// Advances to the next phase (max 5).
   void nextPhase() {
     if (state.currentPhase < 5) {
-      emit(state.copyWith(currentPhase: state.currentPhase + 1));
+      final newPhase = state.currentPhase + 1;
+      emit(state.copyWith(currentPhase: newPhase));
     }
   }
 
+  /// Moves back one phase while clearing phase-specific selections when needed.
   void previousPhase() {
     if (state.currentPhase > 1) {
       final newPhase = state.currentPhase - 1;
-      // When going back from phase 2 to phase 1, clear violation selection
-      if (state.currentPhase == 2 && newPhase == 1) {
-        emit(state.copyWith(currentPhase: newPhase, clearViolation: true));
+      final shouldClearViolation = state.currentPhase == 2 && newPhase == 1;
+      final shouldClearImage = state.currentPhase == 3 && newPhase == 2;
+      final shouldClearNotes = state.currentPhase == 4 && newPhase == 3;
+
+      // Clear notes text controller when leaving Phase 4
+      if (shouldClearNotes) {
+        notesController.clear();
       }
-      // When going back from phase 3 to phase 2, clear image selection
-      else if (state.currentPhase == 3 && newPhase == 2) {
-        emit(state.copyWith(currentPhase: newPhase, clearImage: true));
-      } else {
-        emit(state.copyWith(currentPhase: newPhase));
-      }
+
+      emit(state.copyWith(
+        currentPhase: newPhase,
+        clearViolation: shouldClearViolation,
+        clearImage: shouldClearImage,
+        clearNotes: shouldClearNotes,
+      ));
     }
   }
 
+  /// Simulates submitting the tow report. Replace with real repository call later.
   Future<void> submitTowingReport() async {
     emit(state.copyWith(isLoading: true, errorMessage: null, successMessage: null));
 
     try {
-      // TODO: Replace with actual API call to tow service
       await Future.delayed(const Duration(seconds: 2));
 
       final plateNumber = state.towingEntry?.plateNumber ?? 'Unknown';
@@ -180,6 +254,7 @@ class TowCubit extends Cubit<TowState> {
   @override
   Future<void> close() {
     plateNumberController.dispose();
+    notesController.dispose();
     return super.close();
   }
 }

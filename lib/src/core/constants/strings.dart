@@ -38,8 +38,8 @@ class FirebaseStrings {
 }
 
 class SharedPrefStrings {
-  // TODO: Add Shared Preferences keys here
   static const String userId = 'user_id';
+  static const String supabaseUserProfile = 'supabase_user_profile';
 }
 
 class HomeStrings {
@@ -67,6 +67,7 @@ class HomeStrings {
   static const String plateNumberLabel = 'Plate Number';
   static const String additionalNotesLabel = 'Additional Notes';
   static const String reportedByLabel = 'Reported by';
+  static const String towedByLabel = 'Towed by';
   static const String attachedImagesLabel = 'Attached Images';
   static const String viewAction = 'View';
   static const String dismissAction = 'Dismiss';
@@ -109,6 +110,7 @@ class HomeStrings {
   static const String historyOfTows = 'History of Tows';
   static const String towingDate = 'Towing date:';
   static const String review = 'Review';
+  static const String noTowingHistory = 'No Towing History';
   static const String timeRange = 'Time range';
   static const String lastYear = 'Last year';
   static const String lastMonth = 'Last month';
@@ -119,6 +121,7 @@ class HomeStrings {
   static const String permitControl = 'Permit Control';
   static const String superAdmin = 'Super Admin';
   static const String filter = 'Filter';
+  static const String all = 'All';
 
   static const String view = 'View';
   static const String towingDetails = 'Towing Details';

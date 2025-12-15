@@ -25,7 +25,6 @@ class PatrolCubit extends Cubit<PatrolState> {
       ),
       plateSpotInfo: PlateSpotInfo(plateNumber: 'ABC 123', spotNumber: '3A'),
     ),
-
     PermitModel(
       id: 'PERMIT-002',
       permitType: 'Yearly',
@@ -37,7 +36,6 @@ class PatrolCubit extends Cubit<PatrolState> {
       ),
       plateSpotInfo: PlateSpotInfo(plateNumber: 'XYZ 987', spotNumber: '12B'),
     ),
-
     PermitModel(
       id: 'PERMIT-003',
       permitType: 'Weekly',
@@ -49,7 +47,6 @@ class PatrolCubit extends Cubit<PatrolState> {
       ),
       plateSpotInfo: PlateSpotInfo(plateNumber: 'JHD 552', spotNumber: '7C'),
     ),
-
     PermitModel(
       id: 'PERMIT-004',
       permitType: 'Daily',
@@ -57,13 +54,72 @@ class PatrolCubit extends Cubit<PatrolState> {
       vehicleInfo: VehicleInfo(model: 'Ford F-150', year: '2022', color: 'Red'),
       plateSpotInfo: PlateSpotInfo(plateNumber: 'FTR 221', spotNumber: '19D'),
     ),
-
     PermitModel(
       id: 'PERMIT-005',
       permitType: 'Monthly',
       expiryDate: DateTime.parse('2025-03-01'),
       vehicleInfo: VehicleInfo(model: 'BMW X5', year: '2023', color: 'Grey'),
       plateSpotInfo: PlateSpotInfo(plateNumber: 'BMV 005', spotNumber: '22E'),
+    ),
+    PermitModel(
+      id: 'PERMIT-006-VERY-LONG-ID-STRING-TESTING-OVERFLOW-HANDLING-IN-UI-COMPONENTS',
+      permitType: 'Half Yearly',
+      expiryDate: DateTime.parse('2025-06-15'),
+      vehicleInfo: VehicleInfo(
+        model: 'Mercedes-Benz G-Class AMG G63 Performance Edition Ultra Luxury',
+        year: '2024',
+        color: 'Obsidian Black Metallic with Chrome Accents',
+      ),
+      plateSpotInfo: PlateSpotInfo(
+        plateNumber: 'VERYLONGPLATE12345',
+        spotNumber: 'SECTION-A-LEVEL-3-SPOT-999',
+      ),
+    ),
+    PermitModel(
+      id: 'P-007',
+      permitType: 'Daily',
+      expiryDate: DateTime.parse('2025-01-15'),
+      vehicleInfo: VehicleInfo(
+        model: 'Tesla Model S Plaid Long Range All-Wheel Drive Performance Package',
+        year: '2025',
+        color: 'Pearl White Multi-Coat',
+      ),
+      plateSpotInfo: PlateSpotInfo(plateNumber: 'ABC123DEF456GHI789', spotNumber: '1'),
+    ),
+    PermitModel(
+      id: 'PERMIT-008',
+      permitType: 'Quarterly',
+      expiryDate: DateTime.parse('2025-02-28'),
+      vehicleInfo: VehicleInfo(
+        model: 'Porsche Taycan Turbo S Cross Turismo Executive',
+        year: '2024',
+        color: 'Frozen Berry Metallic Special Edition',
+      ),
+      plateSpotInfo: PlateSpotInfo(
+        plateNumber: '1',
+        spotNumber: 'UNDERGROUND-PARKING-LEVEL-B5-RESERVED-VIP-SECTION',
+      ),
+    ),
+    PermitModel(
+      id: 'P-MIN',
+      permitType: 'Daily',
+      expiryDate: DateTime.parse('2025-01-20'),
+      vehicleInfo: VehicleInfo(model: 'X', year: '99', color: 'R'),
+      plateSpotInfo: PlateSpotInfo(plateNumber: '1', spotNumber: 'A'),
+    ),
+    PermitModel(
+      id: 'PERMIT-010',
+      permitType: 'Monthly',
+      expiryDate: DateTime.parse('2025-05-30'),
+      vehicleInfo: VehicleInfo(
+        model: 'Lamborghini Aventador SVJ Roadster Special Edition',
+        year: '2023',
+        color: 'Arancio Argos Orange Pearl',
+      ),
+      plateSpotInfo: PlateSpotInfo(
+        plateNumber: 'LAMBORGHINI-SVJ-2023-SPECIAL',
+        spotNumber: 'PREMIUM-SPOT-EXECUTIVE-LEVEL-ROOFTOP-A1',
+      ),
     ),
   ];
 
@@ -96,11 +152,67 @@ class PatrolCubit extends Cubit<PatrolState> {
       description:
           'Popular dining area with fast food, cafés, and parking spots.',
     ),
+    LocationModel(
+      id: 'LOC-006-VERY-LONG-LOCATION-ID-FOR-TESTING-OVERFLOW-AND-UI-BREAKING-SCENARIOS',
+      title: 'The Grand Imperial International Business Center and Corporate Executive Headquarters Complex',
+      description:
+          'This is an extremely long description designed to test text wrapping, overflow handling, and UI responsiveness across different screen sizes. The facility features state-of-the-art amenities, cutting-edge technology infrastructure, premium parking spaces with electric vehicle charging stations, 24/7 security surveillance systems, biometric access control, climate-controlled environments, and comprehensive visitor management protocols.',
+    ),
+    LocationModel(
+      id: 'LOC-007',
+      title: 'X',
+      description: 'A',
+    ),
+    LocationModel(
+      id: 'LOC-008',
+      title: 'Shopping Mall Complex with Multiple Retail Outlets and Entertainment Facilities',
+      description: 'Large commercial center.',
+    ),
+    LocationModel(
+      id: 'LOC-009',
+      title: 'Airport Terminal',
+      description:
+          'International airport terminal with short-term and long-term parking options, shuttle services, car rental facilities, electric vehicle charging infrastructure, accessible parking spaces, covered parking areas, outdoor lots, premium valet services, and real-time parking availability monitoring systems integrated with mobile applications for seamless customer experience.',
+    ),
+    LocationModel(
+      id: 'LOC-010',
+      title: 'Hospital Emergency Medical Center',
+      description: 'Emergency parking for medical facility visitors.',
+    ),
+    LocationModel(
+      id: 'L-11',
+      title: 'Stadium',
+      description: 'Sports venue parking.',
+    ),
+    LocationModel(
+      id: 'LOC-012',
+      title: 'Beach Resort & Recreational Waterfront Area',
+      description:
+          'Coastal parking facility with beach access, restroom facilities, picnic areas, and seasonal passes available.',
+    ),
+    LocationModel(
+      id: 'LOC-013-TEST-SPECIAL-CHARS-!@#\$%^&*()_+-=[]{}|;:",.<>?/',
+      title: 'Test Location with Special Characters: !@#\$%^&*()',
+      description:
+          'Testing special character handling in UI: <>?:"{}|_+-=[]\\;/.,~`',
+    ),
+    LocationModel(
+      id: 'LOC-014',
+      title: 'University Research Laboratory and Advanced Technology Innovation Hub',
+      description: 'Research facility with restricted access parking zones.',
+    ),
+    LocationModel(
+      id: 'LOC-015',
+      title: 'Convention Center',
+      description: 'Event venue with massive parking capacity for conferences, exhibitions, trade shows, and large-scale public events.',
+    ),
   ];
 
   //***************************************Location ********************************* */
-  void loadLocationData() {
-    emit(state.copyWith(locations: dummyLocations));
+  void loadLocationData() async {
+    emit(state.copyWith(isLoadingLocations: true));
+    await Future.delayed(const Duration(seconds: 2));
+    emit(state.copyWith(isLoadingLocations: false, locations: dummyLocations));
   }
 
   void searchLocations(String query) {
@@ -130,8 +242,10 @@ class PatrolCubit extends Cubit<PatrolState> {
 
   //***************************************Permit ********************************* */
 
-  void loadPermitData({required String locationId}) {
-    emit(state.copyWith(permits: dummyPermits));
+  void loadPermitData({required String locationId}) async {
+    emit(state.copyWith(isLoadingPermits: true));
+    await Future.delayed(const Duration(seconds: 2));
+    emit(state.copyWith(isLoadingPermits: false, permits: dummyPermits));
   }
 
   void searchPermits(String query) {

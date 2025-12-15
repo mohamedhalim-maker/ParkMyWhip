@@ -11,7 +11,7 @@ class PermitSmallContainer extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: AppColor.gray20),
+        border: Border.all(color: AppColor.cardBorder),
         color: AppColor.gray10,
       ),
       padding: EdgeInsets.symmetric(horizontal: 8.w),

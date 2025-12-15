@@ -4,9 +4,9 @@ import 'package:park_my_whip/src/core/constants/colors.dart';
 import 'package:park_my_whip/src/core/constants/text_style.dart';
 import 'package:park_my_whip/src/core/helpers/spacing.dart';
 import 'package:park_my_whip/src/features/home/data/models/history_report_model.dart';
-import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/car_details_and_submit_time.dart';
-import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/id_and_admin_role.dart';
-import 'package:park_my_whip/src/features/home/presentation/widgets/reports_widgets/plate_number_and_reported_by.dart';
+import 'package:park_my_whip/src/features/home/presentation/widgets/common/car_details_and_submit_time.dart';
+import 'package:park_my_whip/src/features/home/presentation/widgets/common/id_and_admin_role.dart';
+import 'package:park_my_whip/src/features/home/presentation/widgets/common/plate_number_and_reported_by.dart';
 
 class SingleHistoryReport extends StatelessWidget {
   const SingleHistoryReport({super.key, required this.historyReportModel});
@@ -32,6 +32,8 @@ class SingleHistoryReport extends StatelessWidget {
               child: Text(
                 historyReportModel.expiredReason,
                 style: AppTextStyles.urbanistFont12RedLightMedium1_3,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             verticalSpace(8),

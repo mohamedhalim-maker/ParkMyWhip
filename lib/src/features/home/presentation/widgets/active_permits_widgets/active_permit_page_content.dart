@@ -7,7 +7,7 @@ import 'package:park_my_whip/src/core/widgets/common_app_bar_no_scaffold.dart';
 import 'package:park_my_whip/src/features/home/data/models/permit_data_model.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/patrol_cubit/patrol_cubit.dart';
 import 'package:park_my_whip/src/features/home/presentation/widgets/active_permits_widgets/all_active_permit_list.dart';
-import 'package:park_my_whip/src/features/home/presentation/widgets/search_text_filed.dart';
+import 'package:park_my_whip/src/features/home/presentation/widgets/common/search_text_filed.dart';
 
 class ActivePermitPageContent extends StatelessWidget {
   const ActivePermitPageContent({
@@ -15,10 +15,12 @@ class ActivePermitPageContent extends StatelessWidget {
     required this.placeName,
     required this.permits,
     required this.isPermitSearchActive,
+    required this.isLoading,
   });
   final String placeName;
   final List<PermitModel> permits;
   final bool isPermitSearchActive;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +59,7 @@ class ActivePermitPageContent extends StatelessWidget {
           AllActivePermitList(
             permits: permits,
             isPermitSearchActive: isPermitSearchActive,
+            isLoading: isLoading,
           ),
         ],
       ),

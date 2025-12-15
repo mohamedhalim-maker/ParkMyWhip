@@ -6,30 +6,27 @@ import 'package:park_my_whip/src/core/widgets/common_app_bar_no_scaffold.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/dashboard_cubit/dashboard_cubit.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/tow_cubit/tow_cubit.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/tow_cubit/tow_state.dart';
-import 'package:park_my_whip/src/features/home/presentation/widgets/tow_this_car_widgets/phase_1_enter_plate_number.dart';
-import 'package:park_my_whip/src/features/home/presentation/widgets/tow_this_car_widgets/phase_2_select_violation.dart';
-import 'package:park_my_whip/src/features/home/presentation/widgets/tow_this_car_widgets/phase_3_attach_image.dart';
+import 'package:park_my_whip/src/features/home/presentation/helpers/phase_widget_builder.dart';
+import 'package:park_my_whip/src/features/home/presentation/widgets/tow_this_car_widgets/phase_6_success.dart';
 
 class TowACarPage extends StatelessWidget {
   const TowACarPage({super.key});
+
+  void _handleBackPress(TowState state) {
+    if (state.currentPhase == 1) {
+      getIt<TowCubit>().backToPatrol();
+      getIt<DashboardCubit>().changePage(0);
+    } else {
+      getIt<TowCubit>().previousPhase();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<TowCubit, TowState>(
       builder: (context, state) {
-        Widget phaseWidget;
-        switch (state.currentPhase) {
-          case 1:
-            phaseWidget = Phase1EnterPlateNumber(state: state);
-            break;
-          case 2:
-            phaseWidget = Phase2SelectViolation(state: state);
-            break;
-          case 3:
-            phaseWidget = Phase3AttachImage(state: state);
-            break;
-          default:
-            phaseWidget = const SizedBox.shrink();
+        if (state.currentPhase == 6) {
+          return const Phase6Success();
         }
 
         return Padding(
@@ -38,16 +35,9 @@ class TowACarPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CommonAppBarNoScaffold(
-                // todo remove logic from UI
-                onBackPress: () {
-                  if (state.currentPhase == 1) {
-                    getIt<DashboardCubit>().changePage(0);
-                  } else {
-                    getIt<TowCubit>().previousPhase();
-                  }
-                },
+                onBackPress: () => _handleBackPress(state),
               ),
-              Expanded(child: phaseWidget),
+              Expanded(child: PhaseWidgetBuilder.build(state)),
             ],
           ),
         );
