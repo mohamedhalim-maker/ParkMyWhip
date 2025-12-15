@@ -19,10 +19,10 @@ class ProfilePage extends StatelessWidget {
     return BlocBuilder<ProfileCubit, ProfileState>(
       builder: (context, state) {
         final cubit = context.read<ProfileCubit>();
-        
+
         return PopScope(
           canPop: false,
-          onPopInvoked: (didPop) {
+          onPopInvokedWithResult: (didPop, result) {
             if (!didPop) {
               cubit.navigateToPatrol();
             }
@@ -37,7 +37,10 @@ class ProfilePage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     verticalSpace(24),
-                    Text(HomeStrings.yourProfile, style: AppTextStyles.urbanistFont24Grey800SemiBold1),
+                    Text(
+                      HomeStrings.yourProfile,
+                      style: AppTextStyles.urbanistFont24Grey800SemiBold1,
+                    ),
                     verticalSpace(20),
                     ProfileInfoCard(
                       label: HomeStrings.username,

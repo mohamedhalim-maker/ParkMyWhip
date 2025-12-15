@@ -22,7 +22,7 @@ class TowACarPage extends StatelessWidget {
 
         return PopScope(
           canPop: false,
-          onPopInvoked: (didPop) {
+          onPopInvokedWithResult: (didPop, result) {
             if (!didPop) {
               cubit.handleBackPress();
             }
@@ -32,9 +32,7 @@ class TowACarPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CommonAppBarNoScaffold(
-                  onBackPress: cubit.handleBackPress,
-                ),
+                CommonAppBarNoScaffold(onBackPress: cubit.handleBackPress),
                 Expanded(child: PhaseWidgetBuilder.build(state)),
               ],
             ),

@@ -20,10 +20,10 @@ class HistoryPage extends StatelessWidget {
     return BlocBuilder<HistoryCubit, HistoryState>(
       builder: (context, state) {
         final cubit = context.read<HistoryCubit>();
-        
+
         return PopScope(
           canPop: false,
-          onPopInvoked: (didPop) {
+          onPopInvokedWithResult: (didPop, result) {
             if (!didPop) {
               cubit.handleBackPress();
             }
@@ -42,7 +42,8 @@ class HistoryPage extends StatelessWidget {
                             verticalSpace(24),
                             Text(
                               HomeStrings.historyOfTows,
-                              style: AppTextStyles.urbanistFont28Grey800SemiBold1,
+                              style:
+                                  AppTextStyles.urbanistFont28Grey800SemiBold1,
                             ),
                             verticalSpace(12),
                             FilterSection(

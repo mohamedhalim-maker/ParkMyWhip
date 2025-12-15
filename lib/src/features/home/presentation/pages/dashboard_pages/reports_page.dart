@@ -14,7 +14,7 @@ class ReportsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<ReportsCubit>();
-    
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: ReportsTabWrapper(
@@ -22,7 +22,7 @@ class ReportsPage extends StatelessWidget {
         builder: (context, currentTabIndex, onBackPress) {
           return PopScope(
             canPop: false,
-            onPopInvoked: (didPop) {
+            onPopInvokedWithResult: (didPop, result) {
               if (!didPop) {
                 onBackPress();
               }

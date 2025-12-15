@@ -16,10 +16,10 @@ class Phase6Success extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<TowCubit>();
-    
+
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
           cubit.handleBackPress();
         }
@@ -57,7 +57,9 @@ class Phase6Success extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24.w).copyWith(bottom: 16.h),
+              padding: EdgeInsets.symmetric(
+                horizontal: 24.w,
+              ).copyWith(bottom: 16.h),
               child: CommonButton(
                 text: HomeStrings.backToHome,
                 onPressed: cubit.handleBackPress,
