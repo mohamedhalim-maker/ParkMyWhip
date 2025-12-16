@@ -43,27 +43,29 @@ class TowingEntryModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'plateNumber': plateNumber,
+      'plate_number': plateNumber,
       'location': location,
-      'towCompany': towCompany,
+      'tow_company': towCompany,
       'reason': reason,
       'notes': notes,
-      'towDate': towDate?.toIso8601String(),
-      'attachedImage': attachedImage,
-      'reportedBy': reportedBy,
+      'tow_date': towDate?.toIso8601String(),
+      'attached_image': attachedImage,
+      'reported_by': reportedBy,
     };
   }
 
   factory TowingEntryModel.fromJson(Map<String, dynamic> json) {
     return TowingEntryModel(
-      plateNumber: json['plateNumber'],
+      plateNumber: json['plate_number'] ?? json['plateNumber'] ?? '',
       location: json['location'],
-      towCompany: json['towCompany'],
+      towCompany: json['tow_company'] ?? json['towCompany'],
       reason: json['reason'],
       notes: json['notes'],
-      towDate: json['towDate'] != null ? DateTime.parse(json['towDate']) : null,
-      attachedImage: json['attachedImage'],
-      reportedBy: json['reportedBy'],
+      towDate: json['tow_date'] != null 
+        ? DateTime.parse(json['tow_date']) 
+        : (json['towDate'] != null ? DateTime.parse(json['towDate']) : null),
+      attachedImage: json['attached_image'] ?? json['attachedImage'],
+      reportedBy: json['reported_by'] ?? json['reportedBy'],
     );
   }
 }

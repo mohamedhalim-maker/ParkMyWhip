@@ -1,13 +1,21 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:park_my_whip/src/core/models/supabase_user_model.dart';
 import 'package:park_my_whip/src/core/routes/names.dart';
+import 'package:park_my_whip/src/core/services/supabase_user_service.dart';
 import 'package:park_my_whip/src/features/auth/domain/validators.dart';
-import 'auth_state.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
+import 'auth_state.dart' as app_auth;
 
-class AuthCubit extends Cubit<AuthState> {
-  AuthCubit({required this.validators}) : super(const AuthState());
+class AuthCubit extends Cubit<app_auth.AuthState> {
+  AuthCubit({
+    required this.validators,
+    required this.supabaseUserService,
+  }) : super(const app_auth.AuthState());
 
   final Validators validators;
+  final SupabaseUserService supabaseUserService;
 
   // Text controllers for signup form
   final TextEditingController signUpNameController = TextEditingController();
@@ -137,7 +145,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  void validateLoginForm({required BuildContext context}) {
+  Future<void> validateLoginForm({required BuildContext context}) async {
     final emailError = validators.emailValidator(
       loginEmailController.text.trim(),
     );
@@ -145,24 +153,137 @@ class AuthCubit extends Cubit<AuthState> {
       loginPasswordController.text.trim(),
     );
 
-    emit(
-      state.copyWith(
-        loginEmailError: emailError,
-        loginPasswordError: passwordError,
-      ),
-    );
-
-    // If no errors, proceed with login logic
-    if (emailError == null && passwordError == null) {
-      Navigator.pushNamed(context, RoutesName.dashboard);
-    } else {
+    if (emailError != null || passwordError != null) {
       emit(
         state.copyWith(
           loginEmailError: emailError,
           loginPasswordError: passwordError,
         ),
       );
+      return;
     }
+
+    // If no validation errors, proceed with Supabase login
+    await loginWithSupabase(context: context);
+  }
+
+  Future<void> loginWithSupabase({required BuildContext context}) async {
+    try {
+      // Clear previous errors and show loading
+      emit(state.copyWith(
+        isLoading: true,
+        loginGeneralError: null,
+        loginEmailError: null,
+        loginPasswordError: null,
+      ));
+
+      final email = loginEmailController.text.trim();
+      final password = loginPasswordController.text.trim();
+
+      // Sign in with Supabase
+      final response = await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = response.user;
+      if (user == null) {
+        emit(state.copyWith(
+          isLoading: false,
+          loginGeneralError: 'Login failed. Please try again.',
+        ));
+        return;
+      }
+
+      debugPrint('AuthCubit: User logged in successfully: \${user.id}');
+
+      // Fetch user profile from users table
+      final userProfile = await Supabase.instance.client
+          .from('users')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (userProfile == null) {
+        debugPrint('AuthCubit: User profile not found, creating new profile');
+        // Create user profile if it doesn't exist
+        await Supabase.instance.client.from('users').insert({
+          'id': user.id,
+          'email': user.email ?? email,
+          'full_name': user.userMetadata?['full_name'] ?? 'User',
+          'phone': user.phone,
+          'role': 'user',
+          'is_active': true,
+          'metadata': {},
+        });
+
+        // Fetch the newly created profile
+        final newProfile = await Supabase.instance.client
+            .from('users')
+            .select()
+            .eq('id', user.id)
+            .single();
+        
+        // Save to local storage
+        final supabaseUser = SupabaseUserModel(
+          id: user.id,
+          email: user.email ?? email,
+          fullName: newProfile['full_name'] ?? 'User',
+          emailVerified: user.emailConfirmedAt != null,
+          avatarUrl: newProfile['avatar_url'],
+          phoneNumber: newProfile['phone'],
+          metadata: Map<String, dynamic>.from(newProfile['metadata'] ?? {}),
+          createdAt: DateTime.parse(newProfile['created_at']),
+          updatedAt: DateTime.parse(newProfile['updated_at']),
+        );
+        await supabaseUserService.cacheUser(supabaseUser);
+      } else {
+        debugPrint('AuthCubit: User profile found, caching user data');
+        // Save user data to SharedPreferences
+        final supabaseUser = SupabaseUserModel(
+          id: user.id,
+          email: user.email ?? email,
+          fullName: userProfile['full_name'] ?? 'User',
+          emailVerified: user.emailConfirmedAt != null,
+          avatarUrl: userProfile['avatar_url'],
+          phoneNumber: userProfile['phone'],
+          metadata: Map<String, dynamic>.from(userProfile['metadata'] ?? {}),
+          createdAt: DateTime.parse(userProfile['created_at']),
+          updatedAt: DateTime.parse(userProfile['updated_at']),
+        );
+        await supabaseUserService.cacheUser(supabaseUser);
+      }
+
+      // Navigate to dashboard
+      emit(state.copyWith(isLoading: false));
+      if (context.mounted) {
+        Navigator.pushReplacementNamed(context, RoutesName.dashboard);
+      }
+    } on AuthException catch (e) {
+      debugPrint('AuthCubit: Supabase auth error: \${e.message}');
+      emit(state.copyWith(
+        isLoading: false,
+        loginGeneralError: _getAuthErrorMessage(e.message),
+      ));
+    } catch (e, stackTrace) {
+      debugPrint('AuthCubit: Login error: \$e');
+      debugPrint('AuthCubit: Stack trace: \$stackTrace');
+      emit(state.copyWith(
+        isLoading: false,
+        loginGeneralError: 'An unexpected error occurred. Please try again.',
+      ));
+    }
+  }
+
+  String _getAuthErrorMessage(String message) {
+    if (message.contains('Invalid login credentials')) {
+      return 'Invalid email or password. Please try again.';
+    } else if (message.contains('Email not confirmed')) {
+      return 'Please verify your email address before logging in.';
+    } else if (message.contains('User not found')) {
+      return 'No account found with this email.';
+    }
+    return 'Login failed. Please check your credentials and try again.';
   }
 
   @override

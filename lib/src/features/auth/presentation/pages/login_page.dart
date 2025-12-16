@@ -72,10 +72,9 @@ class LoginPage extends StatelessWidget {
                   DontHaveAccountText(),
                   verticalSpace(24),
                   CommonButton(
-                    text: AuthStrings.login,
-                    onPressed: () =>
-                        getIt<AuthCubit>().validateLoginForm(context: context),
-                    isEnabled: state.isLoginButtonEnabled,
+                    text: state.isLoading ? 'Logging in...' : AuthStrings.login,
+                    onPressed: () => getIt<AuthCubit>().validateLoginForm(context: context),
+                    isEnabled: state.isLoginButtonEnabled && !state.isLoading,
                   ),
 
                   verticalSpace(16),

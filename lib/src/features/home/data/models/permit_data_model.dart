@@ -15,17 +15,19 @@ class PermitModel {
 
   factory PermitModel.fromJson(Map<String, dynamic> json) {
     return PermitModel(
-      id: json['id'],
-      permitType: json['permitType'],
-      expiryDate: DateTime.parse(json['expiryDate']),
+      id: json['id'] ?? '',
+      permitType: json['permit_type'] ?? json['permitType'] ?? '',
+      expiryDate: json['expiry_date'] != null 
+        ? DateTime.parse(json['expiry_date']) 
+        : (json['expiryDate'] != null ? DateTime.parse(json['expiryDate']) : DateTime.now()),
       vehicleInfo: VehicleInfo(
-        model: json['vehicleInfo']['model'],
-        year: json['vehicleInfo']['year'],
-        color: json['vehicleInfo']['color'],
+        model: json['vehicle_model'] ?? json['vehicleInfo']?['model'] ?? '',
+        year: json['vehicle_year'] ?? json['vehicleInfo']?['year'] ?? '',
+        color: json['vehicle_color'] ?? json['vehicleInfo']?['color'] ?? '',
       ),
       plateSpotInfo: PlateSpotInfo(
-        plateNumber: json['plateSpotInfo']['plateNumber'],
-        spotNumber: json['plateSpotInfo']['spotNumber'],
+        plateNumber: json['plate_number'] ?? json['plateSpotInfo']?['plateNumber'] ?? '',
+        spotNumber: json['spot_number'] ?? json['plateSpotInfo']?['spotNumber'] ?? '',
       ),
     );
   }
@@ -33,10 +35,13 @@ class PermitModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'permitType': permitType,
-      'expiryDate': expiryDate.toIso8601String(),
-      'vehicleInfo': vehicleInfo.toJson(),
-      'plateSpotInfo': plateSpotInfo.toJson(),
+      'permit_type': permitType,
+      'expiry_date': expiryDate.toIso8601String(),
+      'vehicle_model': vehicleInfo.model,
+      'vehicle_year': vehicleInfo.year,
+      'vehicle_color': vehicleInfo.color,
+      'plate_number': plateSpotInfo.plateNumber,
+      'spot_number': plateSpotInfo.spotNumber,
     };
   }
 }

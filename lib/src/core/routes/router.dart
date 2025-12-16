@@ -36,6 +36,7 @@ class AppRouter {
             child: const CreatePasswordPage(),
           ),
         );
+      case RoutesName.initial:
       case RoutesName.login:
         return MaterialPageRoute(
           builder: (_) => BlocProvider.value(
@@ -43,7 +44,6 @@ class AppRouter {
             child: const LoginPage(),
           ),
         );
-      case RoutesName.initial:
       case RoutesName.dashboard:
         return MaterialPageRoute(
           builder: (_) => BlocProvider.value(

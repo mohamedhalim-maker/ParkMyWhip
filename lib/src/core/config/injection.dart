@@ -32,7 +32,10 @@ void setupDependencyInjection() {
 
   // Cubits
   getIt.registerLazySingleton<AuthCubit>(
-    () => AuthCubit(validators: getIt<Validators>()),
+    () => AuthCubit(
+      validators: getIt<Validators>(),
+      supabaseUserService: getIt<SupabaseUserService>(),
+    ),
   );
 
   getIt.registerLazySingleton<DashboardCubit>(() => DashboardCubit());

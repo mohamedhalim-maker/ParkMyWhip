@@ -500,9 +500,64 @@ Navigator.pushNamed(context, RoutesName.reports);
 
 ---
 
-## Backend Integration (Future)
+## Backend Integration with Supabase
 
-Currently using **mock data** in cubits. When connecting to Firebase/Supabase:
+The app uses **Supabase** as the backend database and authentication provider.
+
+### Database Schema
+
+**Tables:**
+- `users` - User profiles (extends auth.users)
+- `locations` - Patrol locations
+- `permits` - Parking permits
+- `active_reports` - Current violation reports
+- `history_reports` - Archived reports
+- `towing_entries` - Towing history records
+
+**Security:**
+- Row Level Security (RLS) enabled on all tables
+- Authenticated users can perform all CRUD operations
+- Public read access for most tables
+- User-specific write access where appropriate
+
+### Supabase Configuration
+
+**Location:** `lib/supabase/supabase_config.dart`
+
+**Key Classes:**
+- `SupabaseConfig` - Initialization and client access
+- `SupabaseService` - Generic CRUD operations helper
+
+**SQL Migrations:**
+- `lib/supabase/supabase_tables.sql` - Table definitions
+- `lib/supabase/supabase_policies.sql` - RLS policies
+
+**Usage Example:**
+```dart
+// Initialize in main.dart
+await SupabaseConfig.initialize();
+
+// Access client
+final client = SupabaseConfig.client;
+
+// Use service helpers
+final data = await SupabaseService.select('permits');
+await SupabaseService.insert('permits', permitData);
+```
+
+### Data Model Conventions
+
+All models support both:
+- **Supabase format** (snake_case): `plate_number`, `tow_date`
+- **Legacy format** (camelCase): `plateNumber`, `towDate`
+
+This allows seamless migration from mock data to Supabase backend.
+
+---
+
+## Backend Integration (Legacy Pattern)
+
+For reference, the original mock data pattern:
 
 1. **Create repository layer** under `features/*/data/repositories/`
 2. **Create data sources** under `features/*/data/data_sources/`
@@ -637,6 +692,20 @@ class ReportsCubit extends Cubit<ReportsState> {
 - ✅ Introduced `SupabaseUserModel` with created/updated timestamps, metadata, and serialization helpers so profile data can mirror Supabase records once backend login is wired up.
 - ✅ Added `SupabaseUserService` backed by `SharedPreferences` to persist both seeded QA data and future authenticated profiles, plus registered the service inside GetIt for app-wide access.
 - ✅ Created `SharedPrefHelper` plus centralized key constants so any feature can use SharedPreferences or FlutterSecureStorage with consistent key names.
+
+### 2025-03-05
+- ✅ Updated Android and iOS display names so the app now shows "Park My Whip" consistently on both platforms.
+- ✅ Integrated Supabase backend with complete database schema
+- ✅ Created SQL migrations for all data tables (users, locations, permits, active_reports, history_reports, towing_entries)
+- ✅ Added Row Level Security policies for all tables
+- ✅ Updated all data models with proper Supabase serialization (snake_case fields)
+- ✅ Initialized Supabase client in main.dart
+- ✅ Added supabase_flutter dependency
+- ✅ Implemented Supabase authentication in AuthCubit with email/password login
+- ✅ Integrated SupabaseUserService for caching user data in SharedPreferences
+- ✅ Updated SupabaseUserModel to match database schema (full_name field)
+- ✅ Added proper error handling and loading states for login flow
+- ✅ Auto-creates user profile in users table if not exists after authentication
 
 ---
 

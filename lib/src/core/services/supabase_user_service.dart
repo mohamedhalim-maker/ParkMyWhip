@@ -53,7 +53,7 @@ class SupabaseUserService {
     final SupabaseUserModel sampleUser = SupabaseUserModel(
       id: 'sample-user-id',
       email: 'qa.patrol@towmywhip.com',
-      name: 'QA Patrol Lead',
+      fullName: 'QA Patrol Lead',
       emailVerified: true,
       avatarUrl:
           'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=300&q=80',

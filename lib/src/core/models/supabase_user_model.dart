@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 class SupabaseUserModel {
   final String id;
   final String email;
-  final String name;
+  final String fullName;
   final bool emailVerified;
   final String? avatarUrl;
   final String? phoneNumber;
@@ -16,7 +16,7 @@ class SupabaseUserModel {
   const SupabaseUserModel({
     required this.id,
     required this.email,
-    required this.name,
+    required this.fullName,
     required this.emailVerified,
     required this.createdAt,
     required this.updatedAt,
@@ -28,7 +28,7 @@ class SupabaseUserModel {
   SupabaseUserModel copyWith({
     String? id,
     String? email,
-    String? name,
+    String? fullName,
     bool? emailVerified,
     String? avatarUrl,
     String? phoneNumber,
@@ -39,7 +39,7 @@ class SupabaseUserModel {
     return SupabaseUserModel(
       id: id ?? this.id,
       email: email ?? this.email,
-      name: name ?? this.name,
+      fullName: fullName ?? this.fullName,
       emailVerified: emailVerified ?? this.emailVerified,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       phoneNumber: phoneNumber ?? this.phoneNumber,
@@ -53,7 +53,7 @@ class SupabaseUserModel {
     return SupabaseUserModel(
       id: json['id'] as String? ?? '',
       email: json['email'] as String? ?? '',
-      name: json['name'] as String? ?? '',
+      fullName: json['full_name'] as String? ?? json['name'] as String? ?? '',
       emailVerified: json['emailVerified'] as bool? ?? json['email_confirmed'] as bool? ?? false,
       avatarUrl: json['avatarUrl'] as String? ?? json['avatar_url'] as String?,
       phoneNumber: json['phoneNumber'] as String? ?? json['phone'] as String?,
@@ -67,7 +67,7 @@ class SupabaseUserModel {
     return {
       'id': id,
       'email': email,
-      'name': name,
+      'full_name': fullName,
       'emailVerified': emailVerified,
       'avatarUrl': avatarUrl,
       'phoneNumber': phoneNumber,

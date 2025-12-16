@@ -65,6 +65,9 @@ dependencies:
   # Shimmer used for loading animations
   shimmer: ^3.0.0
 
+  # Supabase for backend services
+  supabase_flutter: '>=1.10.0'
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

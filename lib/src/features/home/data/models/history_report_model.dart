@@ -19,13 +19,25 @@ class HistoryReportModel {
 
   factory HistoryReportModel.fromJson(Map<String, dynamic> json) {
     return HistoryReportModel(
-      id: json['id'],
-      adminRole: json['adminRole'],
-      plateNumber: json['plateNumber'],
-      reportedBy: json['reportedBy'],
-      carDetails: json['carDetails'],
-      expiredReason: json['expiredReason'],
-      submitTime: DateTime.parse(json['submitTime']),
+      id: json['id'] ?? '',
+      adminRole: json['admin_role'] ?? json['adminRole'] ?? '',
+      plateNumber: json['plate_number'] ?? json['plateNumber'] ?? '',
+      reportedBy: json['reported_by'] ?? json['reportedBy'] ?? '',
+      carDetails: json['car_details'] ?? json['carDetails'] ?? '',
+      expiredReason: json['expired_reason'] ?? json['expiredReason'] ?? '',
+      submitTime: json['submit_time'] != null 
+        ? DateTime.parse(json['submit_time']) 
+        : (json['submitTime'] != null ? DateTime.parse(json['submitTime']) : DateTime.now()),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'admin_role': adminRole,
+    'plate_number': plateNumber,
+    'reported_by': reportedBy,
+    'car_details': carDetails,
+    'expired_reason': expiredReason,
+    'submit_time': submitTime.toIso8601String(),
+  };
 }
