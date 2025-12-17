@@ -43,7 +43,7 @@ class DeepLinkService {
   static void _processDeepLink(Uri uri) {
     debugPrint('DeepLinkService: Deep link received: $uri');
 
-    if (uri.path.contains('resetPassword')) {
+    if (uri.path.contains('reset-password')) {
       // Support both 'token' (from email template) and 'access_token' (legacy)
       final token = uri.queryParameters['token'] ?? uri.queryParameters['access_token'];
       final refreshToken = uri.queryParameters['refresh_token'];

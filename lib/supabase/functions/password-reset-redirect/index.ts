@@ -26,8 +26,8 @@ serve(async (req) => {
 
     // If token is present in query params, redirect directly
     if (token) {
-      const deepLink = `parkmywhip://parkmywhip.com/resetPassword?token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}`;
-      console.log('Redirecting to:', deepLink);
+      const deepLink = `parkmywhip://parkmywhip.com/reset-password?token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}`;
+      console.log('✅ Redirecting to deep link:', deepLink);
 
       // Return HTTP redirect
       return new Response(null, {
