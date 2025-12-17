@@ -60,21 +60,28 @@ class DeepLinkService {
   static void _processDeepLink(Uri uri) {
     debugPrint('DeepLinkService: Deep link received: $uri');
 
-    if (uri.path.contains('reset-password')) {
-      // Supabase sends tokens in the fragment (hash), not query params
-      // Fragment format: #access_token=xxx&refresh_token=xxx&type=recovery
+    // Try to get tokens from query params first (from our edge function)
+    String? accessToken = uri.queryParameters['access_token'];
+    String? refreshToken = uri.queryParameters['refresh_token'];
+    String? type = uri.queryParameters['type'];
+
+    // Fallback: Check hash fragment (direct Supabase redirect)
+    if (accessToken == null) {
       final fragment = uri.fragment;
-      debugPrint('DeepLinkService: Fragment: $fragment');
-
-      // Parse fragment as query parameters
-      final fragmentParams = Uri.splitQueryString(fragment);
+      debugPrint('DeepLinkService: Checking fragment: $fragment');
       
-      final accessToken = fragmentParams['access_token'];
-      final refreshToken = fragmentParams['refresh_token'];
-      final type = fragmentParams['type'] ?? 'recovery';
+      if (fragment.isNotEmpty) {
+        final fragmentParams = Uri.splitQueryString(fragment);
+        accessToken = fragmentParams['access_token'];
+        refreshToken = fragmentParams['refresh_token'];
+        type = fragmentParams['type'];
+      }
+    }
 
-      debugPrint('DeepLinkService: Password reset link - access_token: ${accessToken != null ? 'present' : 'missing'}, type: $type');
+    debugPrint('DeepLinkService: access_token: ${accessToken != null ? 'present' : 'missing'}, type: $type');
 
+    // Handle password reset (type=recovery)
+    if (type == 'recovery') {
       if (accessToken != null) {
         final context = AppRouter.navigatorKey.currentContext;
         if (context != null) {
@@ -86,7 +93,13 @@ class DeepLinkService {
           );
         }
       } else {
-        debugPrint('DeepLinkService: No access token found in fragment');
+        debugPrint('DeepLinkService: No access token found');
+        // Check for errors
+        final error = uri.queryParameters['error'] ?? 
+                     Uri.splitQueryString(uri.fragment)['error'];
+        if (error != null) {
+          debugPrint('DeepLinkService: Error in deep link: $error');
+        }
       }
     }
   }
