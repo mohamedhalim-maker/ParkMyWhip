@@ -63,57 +63,72 @@ class DeepLinkService {
 
     // Check if this is a password reset link by path or query params
     final isPasswordResetPath = uri.path.contains('reset-password');
+    final codeParam = uri.queryParameters['code'];
     final typeParam = uri.queryParameters['type'];
-    final isPasswordResetType = typeParam == 'recovery';
 
-    if (isPasswordResetPath || isPasswordResetType) {
-      // Supabase sends recovery tokens in hash fragment for mobile apps
-      final fragment = uri.fragment;
-      log('Hash fragment: $fragment', name: 'DeepLinkService', level: 800);
+    if (isPasswordResetPath && codeParam != null) {
+      // Supabase PKCE flow: Exchange code for session tokens
+      log('Found password reset code in query params', name: 'DeepLinkService', level: 800);
       
-      if (fragment.isEmpty) {
-        log('No hash fragment found - link may have expired or is invalid', name: 'DeepLinkService', level: 900);
-        // Show error to user - tokens are required for password reset
-        final context = AppRouter.navigatorKey.currentContext;
-        if (context != null) {
-          getIt<AuthCubit>().showError('Password reset link is invalid or has expired. Please request a new one.');
-        }
-        return;
-      }
-
-      // Parse hash fragment parameters
-      final fragmentParams = Uri.splitQueryString(fragment);
-      final accessToken = fragmentParams['access_token'];
-      final refreshToken = fragmentParams['refresh_token'];
-      final type = fragmentParams['type'];
-
-      log('Parsed params - access_token: ${accessToken != null ? 'present' : 'missing'}, refresh_token: ${refreshToken != null ? 'present' : 'missing'}, type: $type', name: 'DeepLinkService', level: 800);
-
-      // Handle password reset (type=recovery)
-      if (type == 'recovery' && accessToken != null && refreshToken != null) {
-        final context = AppRouter.navigatorKey.currentContext;
-        if (context != null) {
-          getIt<AuthCubit>().handlePasswordResetDeepLink(
-            context: context,
-            accessToken: accessToken,
-            refreshToken: refreshToken,
-          );
-        } else {
-          log('No navigator context available', name: 'DeepLinkService', level: 900);
-        }
+      final context = AppRouter.navigatorKey.currentContext;
+      if (context != null) {
+        getIt<AuthCubit>().handlePasswordResetCode(
+          context: context,
+          code: codeParam,
+        );
       } else {
-        log('Invalid recovery link - missing required parameters', name: 'DeepLinkService', level: 900);
-        
+        log('No navigator context available', name: 'DeepLinkService', level: 900);
+      }
+      return;
+    }
+
+    // Legacy flow: Check hash fragment for tokens (in case Supabase changes behavior)
+    if (isPasswordResetPath || typeParam == 'recovery') {
+      final fragment = uri.fragment;
+      log('Hash fragment: ${fragment.isEmpty ? "(empty)" : fragment}', name: 'DeepLinkService', level: 800);
+      
+      if (fragment.isNotEmpty) {
+        // Parse hash fragment parameters
+        final fragmentParams = Uri.splitQueryString(fragment);
+        final accessToken = fragmentParams['access_token'];
+        final refreshToken = fragmentParams['refresh_token'];
+        final type = fragmentParams['type'];
+
+        log('Parsed hash params - access_token: ${accessToken != null ? 'present' : 'missing'}, refresh_token: ${refreshToken != null ? 'present' : 'missing'}, type: $type', name: 'DeepLinkService', level: 800);
+
+        // Handle password reset with tokens (type=recovery)
+        if (type == 'recovery' && accessToken != null && refreshToken != null) {
+          final context = AppRouter.navigatorKey.currentContext;
+          if (context != null) {
+            getIt<AuthCubit>().handlePasswordResetDeepLink(
+              context: context,
+              accessToken: accessToken,
+              refreshToken: refreshToken,
+            );
+          } else {
+            log('No navigator context available', name: 'DeepLinkService', level: 900);
+          }
+          return;
+        }
+
         // Check for errors in fragment
         final error = fragmentParams['error'];
         final errorDescription = fragmentParams['error_description'];
         if (error != null) {
-          log('Error in deep link: $error - $errorDescription', name: 'DeepLinkService', level: 900);
+          log('Error in hash fragment: $error - $errorDescription', name: 'DeepLinkService', level: 900);
           final context = AppRouter.navigatorKey.currentContext;
           if (context != null) {
             getIt<AuthCubit>().showError('Password reset failed: ${errorDescription ?? error}');
           }
+          return;
         }
+      }
+
+      // No code, no hash fragment with tokens - invalid link
+      log('No recovery code or tokens found in deep link', name: 'DeepLinkService', level: 900);
+      final context = AppRouter.navigatorKey.currentContext;
+      if (context != null) {
+        getIt<AuthCubit>().showError('Password reset link is invalid or has expired. Please request a new one.');
       }
     } else {
       log('Unhandled deep link path: ${uri.path}', name: 'DeepLinkService', level: 800);

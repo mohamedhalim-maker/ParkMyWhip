@@ -449,14 +449,67 @@ class AuthCubit extends Cubit<app_auth.AuthState> {
   }
 
   //************************************ deep link handling ************************** */
-  /// Handle password reset deep link from mobile (iOS/Android)
+  /// Handle password reset code from deep link (PKCE flow)
+  /// Exchanges the code for session tokens and navigates to reset password page
+  Future<void> handlePasswordResetCode({
+    required BuildContext context,
+    required String code,
+  }) async {
+    log('Handling password reset code: $code', name: 'AuthCubit', level: 800);
+    
+    try {
+      emit(state.copyWith(isLoading: true));
+      
+      // Exchange the code for a session using verifyOTP
+      // The code from Supabase's email link is a PKCE code
+      log('Exchanging code for session tokens', name: 'AuthCubit', level: 800);
+      final response = await SupabaseConfig.client.auth.verifyOTP(
+        type: OtpType.recovery,
+        token: code,
+      );
+      
+      if (response.user != null) {
+        log('Code verified successfully for user: ${response.user!.id}', name: 'AuthCubit', level: 1000);
+        emit(state.copyWith(isLoading: false));
+        
+        // Navigate to reset password page
+        if (context.mounted) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            RoutesName.resetPassword,
+            (route) => false,
+          );
+        }
+      } else {
+        throw Exception('Failed to verify code');
+      }
+    } catch (e) {
+      log('Error verifying code from deep link: $e', name: 'AuthCubit', level: 900, error: e);
+      emit(state.copyWith(
+        isLoading: false,
+        resetPasswordError: 'Failed to verify reset link. Please request a new one.',
+      ));
+      
+      // Navigate back to login on error
+      if (context.mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          RoutesName.login,
+          (route) => false,
+        );
+      }
+    }
+  }
+
+  /// Handle password reset deep link from mobile (iOS/Android) - Legacy method
   /// Uses recoverSession() to establish a valid session for password reset
+  /// This is kept for backwards compatibility in case Supabase changes redirect behavior
   Future<void> handlePasswordResetDeepLink({
     required BuildContext context,
     required String accessToken,
     required String refreshToken,
   }) async {
-    log('Handling password reset deep link', name: 'AuthCubit', level: 800);
+    log('Handling password reset deep link (legacy flow)', name: 'AuthCubit', level: 800);
     
     try {
       emit(state.copyWith(isLoading: true));
