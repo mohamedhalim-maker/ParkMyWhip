@@ -1,82 +1,187 @@
 import 'dart:async';
 import 'dart:developer';
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
-import 'package:park_my_whip/src/core/config/injection.dart';
-import 'package:park_my_whip/src/core/constants/strings.dart';
 import 'package:park_my_whip/src/core/routes/names.dart';
 import 'package:park_my_whip/src/core/routes/router.dart';
 import 'package:park_my_whip/supabase/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Service to handle Supabase auth state changes and password reset deep links
-/// Uses Supabase's built-in deep link handling instead of manual app_links parsing
+/// Uses Supabase's built-in PKCE flow + app_links to handle expired tokens
 class DeepLinkService {
   static StreamSubscription<AuthState>? _authStateSubscription;
+  static StreamSubscription<Uri>? _deepLinkSubscription;
+  static final _appLinks = AppLinks();
+  static bool _isHandlingDeepLink = false;
 
-  /// Initialize Supabase auth state listener
-  /// This replaces manual deep link handling - Supabase handles deep links automatically
+  /// Initialize Supabase auth state listener and deep link handler
+  /// Supabase automatically handles deep links via PKCE flow when authCallbackUrlHostname is set
   static void initialize() {
-    log('Initializing DeepLinkService with Supabase auth state listener', name: 'DeepLinkService', level: 800);
+    log('Initializing DeepLinkService', name: 'DeepLinkService', level: 800);
     
     // Listen to Supabase auth state changes
-    // When user clicks password reset link, Supabase automatically:
-    // 1. Opens the app via deep link
-    // 2. Exchanges the code for a session
+    // When user clicks a VALID password reset link:
+    // 1. Supabase intercepts the deep link (parkmywhip://reset-password?token=xxx&type=recovery)
+    // 2. Exchanges the token for a session using PKCE flow
     // 3. Triggers PASSWORD_RECOVERY event
     _authStateSubscription = SupabaseConfig.client.auth.onAuthStateChange.listen(
       (AuthState authState) {
         final event = authState.event;
         final session = authState.session;
         
-        log('Auth state changed: $event, session: ${session != null ? "present" : "null"}', 
+        log('Auth state changed: event=$event, session=${session != null ? "present" : "null"}', 
             name: 'DeepLinkService', level: 800);
 
-        // Handle password recovery event
+        // Handle password recovery event (only fires if token is valid)
         if (event == AuthChangeEvent.passwordRecovery) {
-          log('Password recovery event detected', name: 'DeepLinkService', level: 800);
-          _handlePasswordRecovery();
+          if (session != null) {
+            log('Valid password recovery session detected', name: 'DeepLinkService', level: 800);
+            _isHandlingDeepLink = true;
+            _handlePasswordRecovery();
+          } else {
+            log('Password recovery event without session - invalid token', name: 'DeepLinkService', level: 900);
+            _isHandlingDeepLink = true;
+            _handlePasswordResetError('Invalid or expired reset token');
+          }
         }
       },
       onError: (error) {
         log('Auth state change error: $error', name: 'DeepLinkService', level: 900, error: error);
-        // If there's an error (like expired token), show error page
+        _isHandlingDeepLink = true;
         _handlePasswordResetError(error.toString());
       },
     );
+
+    // Listen to app_links to detect when app is opened via deep link
+    // This catches the case when the token is EXPIRED:
+    // - Deep link opens the app
+    // - Supabase tries to exchange token but fails silently (no PASSWORD_RECOVERY event)
+    // - We detect the deep link here and check if session was created
+    _deepLinkSubscription = _appLinks.uriLinkStream.listen(
+      (Uri uri) async {
+        log('Deep link received: $uri', name: 'DeepLinkService', level: 800);
+        
+        // Wait a bit for Supabase to process the link
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        // Check if Supabase auth state change already handled this
+        if (_isHandlingDeepLink) {
+          log('Deep link already handled by auth state change', name: 'DeepLinkService', level: 800);
+          _isHandlingDeepLink = false;
+          return;
+        }
+
+        // Check if this is a password reset link
+        final isPasswordReset = uri.queryParameters['type'] == 'recovery' || 
+                               uri.path.contains('reset-password');
+        
+        if (isPasswordReset) {
+          // Check if we have a valid session
+          final session = SupabaseConfig.client.auth.currentSession;
+          
+          if (session == null) {
+            // No session = expired/invalid token
+            log('Password reset link opened but no session - token is expired', 
+                name: 'DeepLinkService', level: 900);
+            _handlePasswordResetError('Password reset link has expired');
+          } else {
+            // This shouldn't happen (auth state change should have caught it)
+            // But handle it just in case
+            log('Password reset link with session detected via app_links', 
+                name: 'DeepLinkService', level: 800);
+            _handlePasswordRecovery();
+          }
+        }
+      },
+      onError: (error) {
+        log('Deep link stream error: $error', name: 'DeepLinkService', level: 900, error: error);
+      },
+    );
+
+    // Also check initial link (when app is launched from deep link)
+    _checkInitialLink();
+  }
+
+  /// Check if app was launched via deep link
+  static Future<void> _checkInitialLink() async {
+    try {
+      final uri = await _appLinks.getInitialLink();
+      if (uri != null) {
+        log('App launched with deep link: $uri', name: 'DeepLinkService', level: 800);
+        
+        // Wait for Supabase to initialize and process the link
+        await Future.delayed(const Duration(milliseconds: 800));
+        
+        // Check if auth state change handled it
+        if (_isHandlingDeepLink) {
+          log('Initial deep link already handled by auth state change', name: 'DeepLinkService', level: 800);
+          _isHandlingDeepLink = false;
+          return;
+        }
+
+        // Check if this is a password reset link
+        final isPasswordReset = uri.queryParameters['type'] == 'recovery' || 
+                               uri.path.contains('reset-password');
+        
+        if (isPasswordReset) {
+          final session = SupabaseConfig.client.auth.currentSession;
+          
+          if (session == null) {
+            log('App launched with expired password reset link', name: 'DeepLinkService', level: 900);
+            _handlePasswordResetError('Password reset link has expired');
+          } else {
+            log('App launched with valid password reset link', name: 'DeepLinkService', level: 800);
+            _handlePasswordRecovery();
+          }
+        }
+      }
+    } catch (e) {
+      log('Error checking initial link: $e', name: 'DeepLinkService', level: 900, error: e);
+    }
   }
 
   /// Handle successful password recovery
   static void _handlePasswordRecovery() {
-    final context = AppRouter.navigatorKey.currentContext;
-    if (context != null) {
-      log('Navigating to reset password page', name: 'DeepLinkService', level: 800);
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        RoutesName.resetPassword,
-        (route) => false,
-      );
-    } else {
-      log('No navigator context available', name: 'DeepLinkService', level: 900);
-    }
+    log('Navigating to reset password page', name: 'DeepLinkService', level: 800);
+    
+    Future.delayed(const Duration(milliseconds: 300), () {
+      final context = AppRouter.navigatorKey.currentContext;
+      if (context != null && context.mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          RoutesName.resetPassword,
+          (route) => false,
+        );
+      } else {
+        log('No navigator context available for reset password page', name: 'DeepLinkService', level: 900);
+      }
+    });
   }
 
   /// Handle password reset errors (expired/invalid links)
   static void _handlePasswordResetError(String error) {
-    final context = AppRouter.navigatorKey.currentContext;
-    if (context != null) {
-      log('Password reset link error: $error. Showing error page.', name: 'DeepLinkService', level: 900);
-      // On error, navigate to error page where user can go back to login
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        RoutesName.resetLinkError,
-        (route) => false,
-      );
-    }
+    log('Password reset link error: $error. Showing error page.', name: 'DeepLinkService', level: 900);
+    
+    Future.delayed(const Duration(milliseconds: 300), () {
+      final context = AppRouter.navigatorKey.currentContext;
+      if (context != null && context.mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          RoutesName.resetLinkError,
+          (route) => false,
+        );
+      } else {
+        log('No navigator context available for error page', name: 'DeepLinkService', level: 900);
+      }
+    });
   }
 
   /// Dispose and clean up listeners
   static void dispose() {
     _authStateSubscription?.cancel();
     _authStateSubscription = null;
+    _deepLinkSubscription?.cancel();
+    _deepLinkSubscription = null;
   }
 }

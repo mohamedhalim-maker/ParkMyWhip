@@ -96,15 +96,14 @@ class SupabaseAuthRemoteDataSource implements AuthRemoteDataSource {
     try {
       log('Sending password reset to $email', name: 'SupabaseAuthRemoteDataSource', level: 800);
 
-      // Use deep link URL for mobile app redirect
-      const redirectUrl = 'parkmywhip://parkmywhip.com/reset-password';
-
+      // Deep link URL for mobile app password reset
+      // Format: scheme://host/path (as per Supabase deep linking docs)
       await _supabaseClient.auth.resetPasswordForEmail(
         email,
-        redirectTo: redirectUrl,
+        redirectTo: 'parkmywhip://reset-password',
       );
 
-      log('Password reset email sent with redirect: $redirectUrl', name: 'SupabaseAuthRemoteDataSource', level: 800);
+      log('Password reset email sent', name: 'SupabaseAuthRemoteDataSource', level: 800);
       return true;
     } catch (e) {
       log('Password reset error: $e', name: 'SupabaseAuthRemoteDataSource', level: 900, error: e);
