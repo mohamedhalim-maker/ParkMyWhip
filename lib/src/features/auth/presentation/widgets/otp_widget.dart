@@ -13,13 +13,15 @@ class OtpWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasError = errorMessage != null && errorMessage!.isNotEmpty;
+    
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 17.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           PinCodeTextField(
-            length: 5,
+            length: 6,
             hintCharacter: '0',
             obscureText: false,
             hintStyle: AppTextStyles.urbanistFont16Grey800Opacity40Regular1_3,
@@ -33,9 +35,10 @@ class OtpWidget extends StatelessWidget {
               activeFillColor: Colors.transparent,
               selectedFillColor: Colors.transparent,
               inactiveFillColor: Colors.transparent,
-              activeColor: AppColor.grey300,
-              selectedColor: AppColor.grey800,
-              inactiveColor: AppColor.grey300,
+              activeColor: hasError ? AppColor.red : AppColor.grey300,
+              selectedColor: hasError ? AppColor.red : AppColor.grey800,
+              inactiveColor: hasError ? AppColor.red : AppColor.grey300,
+              errorBorderColor: AppColor.red,
             ),
             animationDuration: Duration(milliseconds: 300),
             enableActiveFill: true,

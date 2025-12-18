@@ -20,8 +20,9 @@ class AuthCubit extends Cubit<app_auth.AuthState> {
   final SupabaseUserService supabaseUserService;
   final AuthRemoteDataSource authRemoteDataSource;
   
-  // Timer for reset link resend countdown
+  // Timers for resend countdowns
   Timer? _resendTimer;
+  Timer? _otpResendTimer;
 
   // Text controllers for signup form
   final TextEditingController signUpNameController = TextEditingController();
@@ -231,20 +232,72 @@ class AuthCubit extends Cubit<app_auth.AuthState> {
     }
   }
 
-  // Send OTP for email verification (called when OTP page loads)
-  Future<void> sendOtpForEmailVerification() async {
-    try {
-      final email = signUpEmailController.text.trim();
+  // Start 60-second countdown for OTP resend button
+  void startOtpResendCountdown() {
+    _otpResendTimer?.cancel();
+    emit(state.copyWith(otpResendCountdownSeconds: 60, canResendOtp: false));
+    
+    _otpResendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (state.otpResendCountdownSeconds > 0) {
+        emit(state.copyWith(otpResendCountdownSeconds: state.otpResendCountdownSeconds - 1));
+      } else {
+        emit(state.copyWith(canResendOtp: true));
+        timer.cancel();
+      }
+    });
+  }
 
-      // Call data source to send OTP
-      await authRemoteDataSource.sendOtpForEmailVerification(
-        email: email,
-      );
+  // Send OTP when OTP page loads
+  Future<void> sendOtpOnPageLoad({required BuildContext context}) async {
+    try {
+      emit(state.copyWith(
+        isLoading: true,
+        otpError: null,
+      ));
+
+      final email = signUpEmailController.text.trim();
+      await authRemoteDataSource.sendOtpForEmailVerification(email: email);
 
       log('OTP sent to $email', name: 'AuthCubit', level: 1000);
+      
+      // Start countdown timer
+      startOtpResendCountdown();
+      
+      emit(state.copyWith(isLoading: false));
     } catch (e) {
       log('Send OTP error: $e', name: 'AuthCubit', level: 900, error: e);
-      // Don't emit error state here, let user try to verify anyway
+      final errorMessage = NetworkExceptions.getSupabaseExceptionMessage(e);
+      emit(state.copyWith(
+        isLoading: false,
+        otpError: errorMessage,
+      ));
+    }
+  }
+
+  // Resend OTP for email verification
+  Future<void> resendOtp({required BuildContext context}) async {
+    try {
+      emit(state.copyWith(
+        isLoading: true,
+        otpError: null,
+      ));
+
+      final email = signUpEmailController.text.trim();
+      await authRemoteDataSource.sendOtpForEmailVerification(email: email);
+
+      log('OTP resent to $email', name: 'AuthCubit', level: 1000);
+      
+      // Restart countdown timer
+      startOtpResendCountdown();
+      
+      emit(state.copyWith(isLoading: false));
+    } catch (e) {
+      log('Resend OTP error: $e', name: 'AuthCubit', level: 900, error: e);
+      final errorMessage = NetworkExceptions.getSupabaseExceptionMessage(e);
+      emit(state.copyWith(
+        isLoading: false,
+        otpError: errorMessage,
+      ));
     }
   }
 
@@ -500,6 +553,7 @@ class AuthCubit extends Cubit<app_auth.AuthState> {
   @override
   Future<void> close() {
     _resendTimer?.cancel();
+    _otpResendTimer?.cancel();
     signUpNameController.dispose();
     signUpEmailController.dispose();
     signUpPasswordController.dispose();

@@ -11,8 +11,22 @@ import 'package:park_my_whip/src/features/home/presentation/cubit/profile_cubit/
 import 'package:park_my_whip/src/features/home/presentation/widgets/profile_widgets/profile_info_card.dart';
 import 'package:park_my_whip/src/features/home/presentation/widgets/profile_widgets/profile_action_card.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  @override
+  void initState() {
+    super.initState();
+    // Load user profile when page initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProfileCubit>().loadUserProfile();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +80,7 @@ class ProfilePage extends StatelessWidget {
                       text: HomeStrings.logOut,
                       icon: TowMyWhipIcons.logout,
                       iconColor: AppColor.richRed,
-                      onTap: cubit.logOut,
+                      onTap: state.isLoading ? null : () => cubit.logOut(context: context),
                     ),
                     verticalSpace(16),
                     ProfileActionCard(

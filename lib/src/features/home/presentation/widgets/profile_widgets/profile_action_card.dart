@@ -9,7 +9,7 @@ class ProfileActionCard extends StatelessWidget {
   final double iconSize;
   final Color? iconColor;
   final Color? textColor;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const ProfileActionCard({
     super.key,
@@ -18,7 +18,7 @@ class ProfileActionCard extends StatelessWidget {
     this.iconSize = 24,
     this.iconColor,
     this.textColor,
-    required this.onTap,
+    this.onTap,
   });
 
   @override

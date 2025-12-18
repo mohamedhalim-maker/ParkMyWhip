@@ -7,13 +7,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:park_my_whip/src/core/routes/names.dart';
 
 import 'package:park_my_whip/park_my_whip_app.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const ParkMyWhipApp());
+    await tester.pumpWidget(const ParkMyWhipApp(initialRoute: RoutesName.login));
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

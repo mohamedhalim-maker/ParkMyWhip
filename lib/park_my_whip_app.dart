@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:park_my_whip/src/core/app_style/app_theme.dart';
 import 'package:park_my_whip/src/core/routes/router.dart';
-import 'package:park_my_whip/src/core/routes/names.dart';
 
 class ParkMyWhipApp extends StatelessWidget {
-  const ParkMyWhipApp({super.key});
+  const ParkMyWhipApp({super.key, required this.initialRoute});
+
+  final String initialRoute;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +20,7 @@ class ParkMyWhipApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           navigatorKey: AppRouter.navigatorKey,
           onGenerateRoute: AppRouter.generate,
-          initialRoute: RoutesName.initial,
+          initialRoute: initialRoute,
           theme: AppTheme.lightTheme,
         );
       },

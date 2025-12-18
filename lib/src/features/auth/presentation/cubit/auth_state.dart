@@ -10,6 +10,8 @@ class AuthState extends Equatable {
   //otp fields
   final String? otpError;
   final bool isOtpButtonEnabled;
+  final int otpResendCountdownSeconds;
+  final bool canResendOtp;
   // create password
   final bool isCreatePasswordButtonEnabled;
   final String? createPasswordError;
@@ -41,6 +43,8 @@ class AuthState extends Equatable {
     this.isSignUpButtonEnabled = false,
     this.otpError,
     this.isOtpButtonEnabled = false,
+    this.otpResendCountdownSeconds = 60,
+    this.canResendOtp = false,
     this.isCreatePasswordButtonEnabled = false,
     this.createPasswordError,
     this.confirmPasswordError,
@@ -68,6 +72,8 @@ class AuthState extends Equatable {
     bool? isSignUpButtonEnabled,
     String? otpError,
     bool? isOtpButtonEnabled,
+    int? otpResendCountdownSeconds,
+    bool? canResendOtp,
     String? confirmPasswordError,
     bool? isCreatePasswordButtonEnabled,
     String? createPasswordError,
@@ -95,6 +101,8 @@ class AuthState extends Equatable {
           isSignUpButtonEnabled ?? this.isSignUpButtonEnabled,
       otpError: otpError,
       isOtpButtonEnabled: isOtpButtonEnabled ?? this.isOtpButtonEnabled,
+      otpResendCountdownSeconds: otpResendCountdownSeconds ?? this.otpResendCountdownSeconds,
+      canResendOtp: canResendOtp ?? this.canResendOtp,
       isCreatePasswordButtonEnabled:
           isCreatePasswordButtonEnabled ?? this.isCreatePasswordButtonEnabled,
       createPasswordError: createPasswordError,
@@ -126,6 +134,8 @@ class AuthState extends Equatable {
     isSignUpButtonEnabled,
     otpError,
     isOtpButtonEnabled,
+    otpResendCountdownSeconds,
+    canResendOtp,
     isCreatePasswordButtonEnabled,
     createPasswordError,
     confirmPasswordError,

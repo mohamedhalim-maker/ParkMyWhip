@@ -48,7 +48,12 @@ void setupDependencyInjection() {
 
   getIt.registerLazySingleton<DashboardCubit>(() => DashboardCubit());
   getIt.registerLazySingleton<PatrolCubit>(() => PatrolCubit());
-  getIt.registerLazySingleton<ProfileCubit>(() => ProfileCubit());
+  getIt.registerLazySingleton<ProfileCubit>(
+    () => ProfileCubit(
+      authRemoteDataSource: getIt<AuthRemoteDataSource>(),
+      supabaseUserService: getIt<SupabaseUserService>(),
+    ),
+  );
   getIt.registerLazySingleton<ReportsCubit>(() => ReportsCubit());
   getIt.registerLazySingleton<TowCubit>(() => TowCubit());
   getIt.registerLazySingleton<HistoryCubit>(() => HistoryCubit());

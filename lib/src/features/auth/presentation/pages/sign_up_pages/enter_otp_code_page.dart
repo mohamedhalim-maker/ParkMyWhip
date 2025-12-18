@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:park_my_whip/src/core/config/injection.dart';
+import 'package:park_my_whip/src/core/constants/colors.dart';
 import 'package:park_my_whip/src/core/constants/strings.dart';
 import 'package:park_my_whip/src/core/constants/text_style.dart';
 import 'package:park_my_whip/src/core/helpers/spacing.dart';
@@ -21,9 +21,9 @@ class _EnterOtpCodePageState extends State<EnterOtpCodePage> {
   @override
   void initState() {
     super.initState();
-    // Send OTP when page loads
+    // Send OTP when page loads and start countdown
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      getIt<AuthCubit>().sendOtpForEmailVerification();
+      context.read<AuthCubit>().sendOtpOnPageLoad(context: context);
     });
   }
 
@@ -53,18 +53,44 @@ class _EnterOtpCodePageState extends State<EnterOtpCodePage> {
                   OtpWidget(
                     errorMessage: state.otpError,
                     onChanged: (text) {
-                      getIt<AuthCubit>().onOtpFieldChanged(text: text);
+                      context.read<AuthCubit>().onOtpFieldChanged(text: text);
                     },
                   ),
                   Spacer(),
+                  // Resend button or countdown
+                  Center(
+                    child: state.canResendOtp
+                        ? TextButton(
+                            onPressed: state.isLoading
+                                ? null
+                                : () => context.read<AuthCubit>().resendOtp(context: context),
+                            child: state.isLoading
+                                ? SizedBox(
+                                    width: 16.w,
+                                    height: 16.h,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColor.richRed,
+                                    ),
+                                  )
+                                : Text(
+                                    AuthStrings.resend,
+                                    style: AppTextStyles.urbanistFont16RichRedSemiBold1_2,
+                                  ),
+                          )
+                        : Text(
+                            '${AuthStrings.resendIn} ${AuthCubit.formatCountdownTime(state.otpResendCountdownSeconds)}',
+                            style: AppTextStyles.urbanistFont16RichRedSemiBold1_2,
+                          ),
+                  ),
+                  verticalSpace(12),
                   CommonButton(
                     text: state.isLoading ? 'Verifying...' : AuthStrings.continueText,
                     onPressed: () {
-                      getIt<AuthCubit>().continueFromOTPPage(context: context);
+                      context.read<AuthCubit>().continueFromOTPPage(context: context);
                     },
                     isEnabled: state.isOtpButtonEnabled && !state.isLoading,
                   ),
-
                   verticalSpace(16),
                 ],
               );
