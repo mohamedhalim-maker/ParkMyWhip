@@ -387,13 +387,19 @@ class AuthCubit extends Cubit<app_auth.AuthState> {
     final hasConfirmPassword = resetConfirmPasswordController.text.trim().isNotEmpty;
     final shouldEnable = hasPassword && hasConfirmPassword;
     
-    // Clear errors when user starts typing again and trigger rebuild for validation rules
-    emit(state.copyWith(
-      isResetPasswordButtonEnabled: shouldEnable,
-      resetPasswordError: null,
-      resetConfirmPasswordError: null,
-      resetPasswordFieldTrigger: state.resetPasswordFieldTrigger + 1,
-    ));
+    // Only update button state and trigger rebuild for validation rules
+    // DON'T clear errors - they should persist until next validation
+    if (state.isResetPasswordButtonEnabled != shouldEnable) {
+      emit(state.copyWith(
+        isResetPasswordButtonEnabled: shouldEnable,
+        resetPasswordFieldTrigger: state.resetPasswordFieldTrigger + 1,
+      ));
+    } else {
+      // Trigger rebuild for validation rules even if button state unchanged
+      emit(state.copyWith(
+        resetPasswordFieldTrigger: state.resetPasswordFieldTrigger + 1,
+      ));
+    }
   }
 
   Future<void> validateResetPasswordForm({required BuildContext context}) async {

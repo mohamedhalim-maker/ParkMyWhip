@@ -6,7 +6,7 @@ import 'package:park_my_whip/src/core/routes/names.dart';
 import 'package:park_my_whip/src/core/widgets/common_button.dart';
 
 class ResetLinkErrorPage extends StatelessWidget {
-  const ResetLinkErrorPage({Key? key}) : super(key: key);
+  const ResetLinkErrorPage({super.key});
 
   @override
   Widget build(BuildContext context) {
