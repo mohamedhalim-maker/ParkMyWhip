@@ -52,6 +52,10 @@ class AuthStrings {
   static const String linkExpiredMessage = 'This password reset link is invalid or has expired.';
   static const String linkExpiredInstruction = 'Please request a new password reset link from the login page.';
   static const String goToLoginButton = 'Go to Login';
+  
+  // Password Reset Success
+  static const String passwordResetSuccess = 'Password Reset Successfully!';
+  static const String passwordResetSuccessMessage = 'Your password has been changed successfully. You can now log in with your new password.';
 }
 
 class FirebaseStrings {

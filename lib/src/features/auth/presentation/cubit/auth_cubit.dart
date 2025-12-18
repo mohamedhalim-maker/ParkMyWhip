@@ -374,6 +374,15 @@ class AuthCubit extends Cubit<app_auth.AuthState> {
     Navigator.popUntil(context, (route) => route.isFirst);
   }
 
+  // Navigate from password reset success page to login
+  void navigateFromResetSuccessToLogin({required BuildContext context}) {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      RoutesName.login,
+      (route) => false,
+    );
+  }
+
   // Format countdown seconds to MM:SS format
   static String formatCountdownTime(int seconds) {
     final minutes = seconds ~/ 60;
@@ -442,10 +451,10 @@ class AuthCubit extends Cubit<app_auth.AuthState> {
       emit(state.copyWith(isLoading: false));
 
       if (context.mounted) {
-        // Navigate to login page after successful password reset
+        // Navigate to success page after successful password reset
         Navigator.pushNamedAndRemoveUntil(
           context,
-          RoutesName.login,
+          RoutesName.passwordResetSuccess,
           (route) => false,
         );
       }

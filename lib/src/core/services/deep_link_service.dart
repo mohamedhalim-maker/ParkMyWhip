@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:park_my_whip/src/core/routes/names.dart';
 import 'package:park_my_whip/src/core/routes/router.dart';
 import 'package:park_my_whip/supabase/supabase_config.dart';
@@ -110,8 +111,8 @@ class DeepLinkService {
       if (uri != null) {
         log('App launched with deep link: $uri', name: 'DeepLinkService', level: 800);
         
-        // Wait for Supabase to initialize and process the link
-        await Future.delayed(const Duration(milliseconds: 800));
+        // Wait for Supabase to process the link (it needs time to exchange token)
+        await Future.delayed(const Duration(milliseconds: 500));
         
         // Check if auth state change handled it
         if (_isHandlingDeepLink) {
@@ -145,16 +146,16 @@ class DeepLinkService {
   static void _handlePasswordRecovery() {
     log('Navigating to reset password page', name: 'DeepLinkService', level: 800);
     
-    Future.delayed(const Duration(milliseconds: 300), () {
-      final context = AppRouter.navigatorKey.currentContext;
-      if (context != null && context.mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
+    // Use SchedulerBinding to ensure navigation happens after current frame completes
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      final navigatorState = AppRouter.navigatorKey.currentState;
+      if (navigatorState != null) {
+        navigatorState.pushNamedAndRemoveUntil(
           RoutesName.resetPassword,
           (route) => false,
         );
       } else {
-        log('No navigator context available for reset password page', name: 'DeepLinkService', level: 900);
+        log('Navigator not ready for reset password page', name: 'DeepLinkService', level: 900);
       }
     });
   }
@@ -163,16 +164,16 @@ class DeepLinkService {
   static void _handlePasswordResetError(String error) {
     log('Password reset link error: $error. Showing error page.', name: 'DeepLinkService', level: 900);
     
-    Future.delayed(const Duration(milliseconds: 300), () {
-      final context = AppRouter.navigatorKey.currentContext;
-      if (context != null && context.mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
+    // Use SchedulerBinding to ensure navigation happens after current frame completes
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      final navigatorState = AppRouter.navigatorKey.currentState;
+      if (navigatorState != null) {
+        navigatorState.pushNamedAndRemoveUntil(
           RoutesName.resetLinkError,
           (route) => false,
         );
       } else {
-        log('No navigator context available for error page', name: 'DeepLinkService', level: 900);
+        log('Navigator not ready for error page', name: 'DeepLinkService', level: 900);
       }
     });
   }

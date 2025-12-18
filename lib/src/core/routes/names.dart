@@ -9,4 +9,5 @@ class RoutesName {
   static const resetLinkSent = '/reset-link-sent';
   static const resetPassword = '/reset-password';
   static const resetLinkError = '/reset-link-error';
+  static const passwordResetSuccess = '/password-reset-success';
 }

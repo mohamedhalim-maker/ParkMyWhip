@@ -39,7 +39,7 @@ class LoginPage extends StatelessWidget {
                   ),
                   verticalSpace(24),
                   CustomTextField(
-                    title: AuthStrings.emailLabel,
+                    title: AuthStrings.emailLabelShort,
                     hintText: AuthStrings.emailHint,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.done,
@@ -49,7 +49,7 @@ class LoginPage extends StatelessWidget {
                   ),
                   verticalSpace(20),
                   CustomTextField(
-                    title: AuthStrings.passwordLabel,
+                    title: AuthStrings.passwordLabelShort,
                     hintText: '',
                     keyboardType: TextInputType.visiblePassword,
                     textInputAction: TextInputAction.done,
