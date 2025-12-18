@@ -31,6 +31,7 @@ class ResetLinkSentPage extends StatelessWidget {
       },
       builder: (context, state) {
         return Scaffold(
+          resizeToAvoidBottomInset: false,
           backgroundColor: AppColor.white,
           body: SafeArea(
             child: Column(

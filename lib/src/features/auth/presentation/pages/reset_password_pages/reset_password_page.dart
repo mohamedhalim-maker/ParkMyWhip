@@ -18,7 +18,7 @@ class ResetPasswordPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = getIt<AuthCubit>();
     return Scaffold(
-      // resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),

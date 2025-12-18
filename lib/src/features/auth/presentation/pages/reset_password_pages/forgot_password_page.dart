@@ -18,8 +18,7 @@ class ForgotPasswordPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // resizeToAvoidBottomInset: false,
-      
+      resizeToAvoidBottomInset: false,
       appBar: CommonAppBar(),
       body: SafeArea(
         child: Column(
