@@ -80,6 +80,7 @@ class AuthState extends Equatable {
     String? loginEmailError,
     String? loginPasswordError,
     String? loginGeneralError,
+    bool clearLoginGeneralError = false,
     bool? isLoginButtonEnabled,
     String? forgotPasswordEmailError,
     bool? isForgotPasswordButtonEnabled,
@@ -110,7 +111,7 @@ class AuthState extends Equatable {
       loginEmailError: loginEmailError,
       loginPasswordError: loginPasswordError,
       isLoginButtonEnabled: isLoginButtonEnabled ?? this.isLoginButtonEnabled,
-      loginGeneralError: loginGeneralError,
+      loginGeneralError: clearLoginGeneralError ? null : (loginGeneralError ?? this.loginGeneralError),
       forgotPasswordEmailError: forgotPasswordEmailError,
       isForgotPasswordButtonEnabled:
           isForgotPasswordButtonEnabled ?? this.isForgotPasswordButtonEnabled,

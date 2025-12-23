@@ -1,69 +1,57 @@
-import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:park_my_whip/src/core/data/result.dart';
+import 'package:park_my_whip/src/core/helpers/app_logger.dart';
 import 'package:park_my_whip/src/core/config/injection.dart';
-import 'package:park_my_whip/src/core/networking/network_exceptions.dart';
 import 'package:park_my_whip/src/core/routes/names.dart';
-import 'package:park_my_whip/src/core/services/supabase_user_service.dart';
-import 'package:park_my_whip/src/features/auth/data/data_sources/auth_remote_data_source.dart';
+import 'package:park_my_whip/src/features/auth/domain/repositories/auth_repository.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/dashboard_cubit/dashboard_cubit.dart';
 import 'package:park_my_whip/src/features/home/presentation/cubit/profile_cubit/profile_state.dart';
 
+/// ProfileCubit handles profile page UI logic and state management.
+/// It delegates all data operations to AuthRepository (Single Responsibility).
 class ProfileCubit extends Cubit<ProfileState> {
-  ProfileCubit({
-    required this.authRemoteDataSource,
-    required this.supabaseUserService,
-  }) : super(const ProfileState());
+  ProfileCubit({required AuthRepository authRepository})
+      : _authRepository = authRepository,
+        super(const ProfileState());
 
-  final AuthRemoteDataSource authRemoteDataSource;
-  final SupabaseUserService supabaseUserService;
+  final AuthRepository _authRepository;
 
   void changeEmail() {
-    log('Change email tapped', name: 'ProfileCubit', level: 800);
+    AppLogger.cubit('Change email tapped', cubitName: 'ProfileCubit');
     // TODO: Implement change email functionality
   }
 
   void changePassword() {
-    log('Change password tapped', name: 'ProfileCubit', level: 800);
+    AppLogger.cubit('Change password tapped', cubitName: 'ProfileCubit');
     // TODO: Implement change password functionality
   }
 
   Future<void> logOut({required BuildContext context}) async {
-    try {
-      log('Logging out user', name: 'ProfileCubit', level: 800);
-      
-      emit(state.copyWith(isLoading: true));
+    AppLogger.cubit('Logging out user', cubitName: 'ProfileCubit');
+    emit(state.copyWith(isLoading: true));
 
-      // Sign out from Supabase
-      await authRemoteDataSource.signOut();
-      
-      // Clear cached user data
-      await supabaseUserService.clearUser();
-      
-      log('User logged out successfully', name: 'ProfileCubit', level: 1000);
-      
-      emit(state.copyWith(isLoading: false));
+    final result = await _authRepository.signOut();
 
-      // Navigate to login page and clear navigation stack
-      if (context.mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          RoutesName.login,
-          (route) => false,
-        );
-      }
-    } catch (e) {
-      log('Logout error: $e', name: 'ProfileCubit', level: 900, error: e);
-      final errorMessage = NetworkExceptions.getSupabaseExceptionMessage(e);
-      emit(state.copyWith(
-        isLoading: false,
-        errorMessage: errorMessage,
-      ));
+    switch (result) {
+      case Success():
+        AppLogger.cubit('User logged out successfully', cubitName: 'ProfileCubit');
+        emit(state.copyWith(isLoading: false));
+        if (context.mounted) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            RoutesName.login,
+            (route) => false,
+          );
+        }
+      case Failure(message: final message):
+        AppLogger.cubit('Logout failed: $message', cubitName: 'ProfileCubit');
+        emit(state.copyWith(isLoading: false, errorMessage: message));
     }
   }
 
   void deleteAccount() {
-    log('Delete account tapped', name: 'ProfileCubit', level: 800);
+    AppLogger.cubit('Delete account tapped', cubitName: 'ProfileCubit');
     // TODO: Implement delete account functionality
   }
 
@@ -73,16 +61,18 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   /// Load user data from cache when profile page is initialized
   Future<void> loadUserProfile() async {
-    try {
-      final user = await supabaseUserService.getCachedUser();
-      if (user != null) {
-        emit(state.copyWith(
-          username: user.fullName,
-          email: user.email,
-        ));
-      }
-    } catch (e) {
-      log('Load user profile error: $e', name: 'ProfileCubit', level: 900, error: e);
+    final result = await _authRepository.getCachedUser();
+
+    switch (result) {
+      case Success(:final data):
+        if (data != null) {
+          emit(state.copyWith(
+            username: data.fullName,
+            email: data.email,
+          ));
+        }
+      case Failure(:final message):
+        AppLogger.cubit('Load user profile failed: $message', cubitName: 'ProfileCubit');
     }
   }
 }

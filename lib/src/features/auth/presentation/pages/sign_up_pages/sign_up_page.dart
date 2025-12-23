@@ -74,6 +74,7 @@ class SignUpPage extends StatelessWidget {
                     onPressed: () =>
                         getIt<AuthCubit>().validateSignupForm(context: context),
                     isEnabled: state.isSignUpButtonEnabled,
+                    isLoading: state.isLoading,
                   ),
                   verticalSpace(16),
                 ],

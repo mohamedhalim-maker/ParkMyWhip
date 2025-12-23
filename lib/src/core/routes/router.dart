@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:park_my_whip/src/core/config/injection.dart';
-import 'package:park_my_whip/src/core/services/supabase_user_service.dart';
+import 'package:park_my_whip/src/core/data/result.dart';
+import 'package:park_my_whip/src/features/auth/domain/repositories/auth_repository.dart';
 import 'package:park_my_whip/src/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:park_my_whip/src/features/auth/presentation/pages/reset_password_pages/forgot_password_page.dart';
 import 'package:park_my_whip/src/features/auth/presentation/pages/login_page.dart';
@@ -27,11 +28,13 @@ class AppRouter {
       // Check if user has active Supabase session
       final session = Supabase.instance.client.auth.currentSession;
       if (session != null) {
-        // Verify user data exists in cache
-        final userService = getIt<SupabaseUserService>();
-        final cachedUser = await userService.getCachedUser();
-        if (cachedUser != null && cachedUser.emailVerified) {
-          return RoutesName.dashboard;
+        // Verify user data exists in cache via AuthRepository
+        final authRepository = getIt<AuthRepository>();
+        final result = await authRepository.getCachedUser();
+        if (result case Success(:final data)) {
+          if (data != null && data.emailVerified) {
+            return RoutesName.dashboard;
+          }
         }
       }
       return RoutesName.login;

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:developer';
+import 'package:park_my_whip/src/core/helpers/app_logger.dart';
 
 class SupabaseUserModel {
   final String id;
@@ -83,7 +83,7 @@ class SupabaseUserModel {
     if (value is String && value.isNotEmpty) {
       return DateTime.tryParse(value) ?? DateTime.now();
     }
-    log('Invalid date "$value", defaulting to now.', name: 'SupabaseUserModel', level: 900);
+    AppLogger.warning('Invalid date "$value", defaulting to now', name: 'SupabaseUserModel');
     return DateTime.now();
   }
 

@@ -1,17 +1,52 @@
-import 'dart:developer';
-import 'package:flutter/foundation.dart';
+import 'package:park_my_whip/src/core/config/config.dart';
+import 'package:park_my_whip/src/core/constants/strings.dart';
+import 'package:park_my_whip/src/core/helpers/app_logger.dart';
+import 'package:park_my_whip/src/core/models/email_check_result.dart';
 import 'package:park_my_whip/src/core/models/supabase_user_model.dart';
 import 'package:park_my_whip/src/features/auth/data/data_sources/auth_remote_data_source.dart';
-import 'package:park_my_whip/supabase/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Concrete implementation of [AuthRemoteDataSource] using Supabase
-/// Handles all Supabase auth operations and user profile management
+/// 
+/// This class follows the Single Responsibility Principle by focusing solely
+/// on authentication operations. User profile management is delegated to
+/// a separate helper class to maintain separation of concerns.
 class SupabaseAuthRemoteDataSource implements AuthRemoteDataSource {
   final SupabaseClient _supabaseClient;
+  late final _UserProfileRepository _profileRepo;
 
   SupabaseAuthRemoteDataSource({SupabaseClient? supabaseClient})
-      : _supabaseClient = supabaseClient ?? Supabase.instance.client;
+      : _supabaseClient = supabaseClient ?? Supabase.instance.client {
+    _profileRepo = _UserProfileRepository(_supabaseClient);
+  }
+
+  @override
+  Future<EmailCheckResult> checkEmailForApp({
+    required String email,
+    required String appId,
+  }) async {
+    try {
+      _logInfo('Checking email $email for app $appId');
+
+      final response = await _supabaseClient.rpc(
+        DbStrings.getUserByEmailWithAppCheck,
+        params: {
+          'user_email': email,
+          'p_app_id': appId,
+        },
+      );
+
+      final result = EmailCheckResult.fromRpcResponse(
+        response as Map<String, dynamic>?,
+      );
+
+      _logSuccess('Email check result: ${result.status}');
+      return result;
+    } catch (e, stackTrace) {
+      _logError('Email check failed', e, stackTrace);
+      rethrow;
+    }
+  }
 
   @override
   Future<SupabaseUserModel> loginWithEmailAndPassword({
@@ -19,133 +54,65 @@ class SupabaseAuthRemoteDataSource implements AuthRemoteDataSource {
     required String password,
   }) async {
     try {
-      log('Attempting login for $email', name: 'SupabaseAuthRemoteDataSource', level: 800);
+      _logInfo('Attempting login for $email');
 
-      // Sign in with Supabase
-      final response = await _supabaseClient.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
+      final authResponse = await _signInWithPassword(email, password);
+      final user = _validateAuthResponse(authResponse);
 
-      final user = response.user;
-      if (user == null) {
-        throw Exception('Login failed. No user returned.');
-      }
+      _logSuccess('User logged in: ${user.id}');
 
-      log('User logged in: ${user.id}', name: 'SupabaseAuthRemoteDataSource', level: 1000);
-
-      // Fetch user profile from users table
-      final userProfile = await _supabaseClient
-          .from('users')
-          .select()
-          .eq('id', user.id)
-          .maybeSingle();
-
-      if (userProfile == null) {
-        log('Creating new user profile', name: 'SupabaseAuthRemoteDataSource', level: 800);
-        // Create user profile if it doesn't exist
-        await _supabaseClient.from('users').insert({
-          'id': user.id,
-          'email': user.email ?? email,
-          'full_name': user.userMetadata?['full_name'] ?? 'User',
-          'phone': user.phone,
-          'role': 'user',
-          'is_active': true,
-          'metadata': {},
-        });
-
-        // Fetch the newly created profile
-        final newProfile = await _supabaseClient
-            .from('users')
-            .select()
-            .eq('id', user.id)
-            .single();
-
-        return SupabaseUserModel(
-          id: user.id,
-          email: user.email ?? email,
-          fullName: newProfile['full_name'] ?? 'User',
-          emailVerified: user.emailConfirmedAt != null,
-          avatarUrl: newProfile['avatar_url'],
-          phoneNumber: newProfile['phone'],
-          metadata: Map<String, dynamic>.from(newProfile['metadata'] ?? {}),
-          createdAt: DateTime.parse(newProfile['created_at']),
-          updatedAt: DateTime.parse(newProfile['updated_at']),
-        );
-      }
-
-      // Return existing user profile
-      return SupabaseUserModel(
-        id: user.id,
-        email: user.email ?? email,
-        fullName: userProfile['full_name'] ?? 'User',
-        emailVerified: user.emailConfirmedAt != null,
-        avatarUrl: userProfile['avatar_url'],
-        phoneNumber: userProfile['phone'],
-        metadata: Map<String, dynamic>.from(userProfile['metadata'] ?? {}),
-        createdAt: DateTime.parse(userProfile['created_at']),
-        updatedAt: DateTime.parse(userProfile['updated_at']),
-      );
+      return await _profileRepo.getOrCreateUserProfile(user, email);
     } catch (e, stackTrace) {
-      log('Login error: $e', name: 'SupabaseAuthRemoteDataSource', level: 900, error: e, stackTrace: stackTrace);
-      
-      // Add detailed error logging for debugging
-      if (e is AuthException) {
-        log('Auth error details - Status: ${e.statusCode}, Message: ${e.message}', 
-            name: 'SupabaseAuthRemoteDataSource', level: 900);
-      }
-      
-      rethrow; // Let NetworkExceptions handle error translation
+      _logError('Login failed', e, stackTrace);
+      rethrow;
     }
   }
 
   @override
   Future<bool> sendPasswordResetEmail({required String email}) async {
     try {
-      log('Sending password reset to $email', name: 'SupabaseAuthRemoteDataSource', level: 800);
+      _logInfo('Sending password reset to $email');
 
-      // Deep link URL for mobile app password reset
-      // Format: scheme://host/path (as per Supabase deep linking docs)
       await _supabaseClient.auth.resetPasswordForEmail(
         email,
-        redirectTo: 'parkmywhip://reset-password',
+        redirectTo: AuthConstStrings.passwordResetDeepLink,
       );
 
-      log('Password reset email sent', name: 'SupabaseAuthRemoteDataSource', level: 800);
+      _logSuccess('Password reset email sent');
       return true;
-    } catch (e) {
-      log('Password reset error: $e', name: 'SupabaseAuthRemoteDataSource', level: 900, error: e);
-      rethrow; // Let NetworkExceptions handle error translation
+    } catch (e, stackTrace) {
+      _logError('Password reset failed', e, stackTrace);
+      rethrow;
     }
   }
 
   @override
   Future<bool> updatePassword({required String newPassword}) async {
     try {
-      log('Updating password', name: 'SupabaseAuthRemoteDataSource', level: 800);
+      _logInfo('Updating password');
 
       await _supabaseClient.auth.updateUser(
         UserAttributes(password: newPassword),
       );
 
-      log('Password updated successfully', name: 'SupabaseAuthRemoteDataSource', level: 1000);
+      _logSuccess('Password updated successfully');
       return true;
-    } catch (e) {
-      log('Update password error: $e', name: 'SupabaseAuthRemoteDataSource', level: 900, error: e);
-      rethrow; // Let NetworkExceptions handle error translation
+    } catch (e, stackTrace) {
+      _logError('Update password failed', e, stackTrace);
+      rethrow;
     }
   }
 
   @override
   Future<bool> signOut() async {
     try {
-      log('Signing out user', name: 'SupabaseAuthRemoteDataSource', level: 800);
+      _logInfo('Signing out user');
       await _supabaseClient.auth.signOut();
-      log('User signed out successfully', name: 'SupabaseAuthRemoteDataSource', level: 1000);
+      _logSuccess('User signed out successfully');
       return true;
-    } catch (e) {
-      log('Sign out error: $e', name: 'SupabaseAuthRemoteDataSource', level: 900, error: e);
-      rethrow; // Let NetworkExceptions handle error translation
+    } catch (e, stackTrace) {
+      _logError('Sign out failed', e, stackTrace);
+      rethrow;
     }
   }
 
@@ -156,73 +123,35 @@ class SupabaseAuthRemoteDataSource implements AuthRemoteDataSource {
     required String fullName,
   }) async {
     try {
-      debugPrint('🔵 [SIGNUP] Creating account for $email');
+      _logInfo('Creating account for $email');
 
-      // Step 1: Create account in Supabase (without email confirmation)
-      final signUpResponse = await _supabaseClient.auth.signUp(
-        email: email,
-        password: password,
-        data: {'full_name': fullName},
-        emailRedirectTo: null, // Disable automatic email sending
-      );
+      final authResponse = await _signUpWithEmail(email, password, fullName);
+      final user = _validateAuthResponse(authResponse);
 
-      debugPrint('🔵 [SIGNUP] SignUp response: user=${signUpResponse.user?.id}, session=${signUpResponse.session?.accessToken != null}');
+      _logSuccess('Account created. User ID: ${user.id}');
 
-      if (signUpResponse.user == null) {
-        debugPrint('🔴 [SIGNUP ERROR] No user returned from Supabase');
-        throw Exception('Account creation failed. No user returned from Supabase.');
-      }
+      await _profileRepo.createUserProfile(user.id, email, fullName);
 
-      debugPrint('✅ [SIGNUP] Account created successfully. User ID: ${signUpResponse.user!.id}');
-
-      // Step 2: Create user profile in database
-      try {
-        debugPrint('🔵 [SIGNUP] Creating user profile in database...');
-        await _supabaseClient.from('users').insert({
-          'id': signUpResponse.user!.id,
-          'email': email,
-          'full_name': fullName,
-          'role': 'user',
-          'is_active': true,
-          'metadata': {},
-        });
-        debugPrint('✅ [SIGNUP] User profile created in database');
-      } catch (dbError) {
-        debugPrint('🔴 [SIGNUP ERROR] Database insert error: $dbError');
-        throw Exception('Failed to create user profile in database: $dbError');
-      }
-
+      _logSuccess('User profile created in database');
       return true;
-    } catch (e) {
-      debugPrint('🔴 [SIGNUP ERROR] Create account error: $e');
-      
-      // Add detailed error logging
-      if (e is AuthException) {
-        debugPrint('🔴 [SIGNUP ERROR] Auth error - Status: ${e.statusCode}, Message: ${e.message}');
-      }
-      if (e is PostgrestException) {
-        debugPrint('🔴 [SIGNUP ERROR] Database error - Code: ${e.code}, Message: ${e.message}');
-      }
-      
-      rethrow; // Let NetworkExceptions handle error translation
+    } catch (e, stackTrace) {
+      _logError('Create account failed', e, stackTrace);
+      rethrow;
     }
   }
 
   @override
-  Future<bool> sendOtpForEmailVerification({
-    required String email,
-  }) async {
+  Future<bool> sendOtpForEmailVerification({required String email}) async {
     try {
-      log('Sending OTP to $email for email verification', name: 'SupabaseAuthRemoteDataSource', level: 800);
+      _logInfo('Sending OTP to $email');
 
-      // Send OTP for email verification
       await _supabaseClient.auth.signInWithOtp(email: email);
 
-      log('OTP sent to $email', name: 'SupabaseAuthRemoteDataSource', level: 800);
+      _logSuccess('OTP sent to $email');
       return true;
-    } catch (e) {
-      log('Send OTP error: $e', name: 'SupabaseAuthRemoteDataSource', level: 900, error: e);
-      rethrow; // Let NetworkExceptions handle error translation
+    } catch (e, stackTrace) {
+      _logError('Send OTP failed', e, stackTrace);
+      rethrow;
     }
   }
 
@@ -232,42 +161,207 @@ class SupabaseAuthRemoteDataSource implements AuthRemoteDataSource {
     required String otp,
   }) async {
     try {
-      log('Verifying OTP for $email', name: 'SupabaseAuthRemoteDataSource', level: 800);
+      _logInfo('Verifying OTP for $email');
 
-      // Verify OTP to confirm email
-      final verifyResponse = await _supabaseClient.auth.verifyOTP(
+      final verifyResponse = await _verifyOtp(email, otp);
+      final user = _validateAuthResponse(verifyResponse);
+
+      _logSuccess('Email verified successfully');
+
+      return await _profileRepo.getUserProfile(user.id, email, emailVerified: true);
+    } catch (e, stackTrace) {
+      _logError('OTP verification failed', e, stackTrace);
+      rethrow;
+    }
+  }
+
+  // ========== Private Auth Methods ==========
+
+  Future<AuthResponse> _signInWithPassword(String email, String password) =>
+      _supabaseClient.auth.signInWithPassword(email: email, password: password);
+
+  Future<AuthResponse> _signUpWithEmail(String email, String password, String fullName) =>
+      _supabaseClient.auth.signUp(
+        email: email,
+        password: password,
+        data: {DbStrings.fullName: fullName},
+        emailRedirectTo: null,
+      );
+
+  Future<AuthResponse> _verifyOtp(String email, String otp) =>
+      _supabaseClient.auth.verifyOTP(
         email: email,
         token: otp,
         type: OtpType.email,
       );
 
-      if (verifyResponse.user == null) {
-        throw Exception('OTP verification failed.');
-      }
+  User _validateAuthResponse(AuthResponse response) {
+    if (response.user == null) {
+      throw _AuthException(ErrorStrings.authFailed);
+    }
+    return response.user!;
+  }
 
-      log('Email verified successfully', name: 'SupabaseAuthRemoteDataSource', level: 1000);
+  // ========== Logging Helpers ==========
 
-      // Fetch user profile from database
-      final userProfile = await _supabaseClient
-          .from('users')
-          .select()
-          .eq('id', verifyResponse.user!.id)
-          .single();
+  void _logInfo(String message) => AppLogger.auth(message);
 
-      return SupabaseUserModel(
-        id: verifyResponse.user!.id,
-        email: verifyResponse.user!.email ?? email,
-        fullName: userProfile['full_name'] ?? 'User',
-        emailVerified: true,
-        avatarUrl: userProfile['avatar_url'],
-        phoneNumber: userProfile['phone'],
-        metadata: Map<String, dynamic>.from(userProfile['metadata'] ?? {}),
-        createdAt: DateTime.parse(userProfile['created_at']),
-        updatedAt: DateTime.parse(userProfile['updated_at']),
+  void _logSuccess(String message) => AppLogger.auth(message);
+
+  void _logError(String message, Object error, [StackTrace? stackTrace]) {
+    final errorDetails = StringBuffer(message);
+    if (error is AuthException) {
+      errorDetails.write(' | Status: ${error.statusCode}, Message: ${error.message}');
+    }
+    if (error is PostgrestException) {
+      errorDetails.write(' | DB Code: ${error.code}, Message: ${error.message}');
+    }
+    AppLogger.error(errorDetails.toString(), name: 'Auth', error: error, stackTrace: stackTrace);
+  }
+}
+
+// ========== User Profile Repository ==========
+/// Handles all user profile database operations
+/// Separated from auth logic to follow Single Responsibility Principle
+class _UserProfileRepository {
+  final SupabaseClient _client;
+
+  _UserProfileRepository(this._client);
+
+  /// Gets existing user profile or creates one if it doesn't exist
+  /// Also ensures user_apps record exists for the current app
+  Future<SupabaseUserModel> getOrCreateUserProfile(User user, String email) async {
+    final profile = await _fetchUserProfile(user.id);
+
+    if (profile == null) {
+      AppLogger.database('Creating new user profile for user ${user.id}');
+      await createUserProfile(
+        user.id,
+        user.email ?? email,
+        user.userMetadata?[DbStrings.fullName] ?? AuthConstStrings.defaultUserName,
       );
+      final newProfile = await _fetchUserProfile(user.id, required: true);
+      return _mapToUserModel(user, newProfile!, email);
+    }
+
+    // Ensure user_apps record exists
+    await _ensureUserAppRecord(user.id);
+
+    return _mapToUserModel(user, profile, email);
+  }
+
+  /// Fetches user profile by user ID
+  Future<SupabaseUserModel> getUserProfile(
+    String userId,
+    String email, {
+    bool emailVerified = false,
+  }) async {
+    final profile = await _fetchUserProfile(userId, required: true);
+
+    // Ensure user_apps record exists
+    await _ensureUserAppRecord(userId);
+
+    return SupabaseUserModel(
+      id: userId,
+      email: email,
+      fullName: profile![DbStrings.fullName] ?? AuthConstStrings.defaultUserName,
+      emailVerified: emailVerified,
+      avatarUrl: profile[DbStrings.avatarUrl],
+      phoneNumber: profile[DbStrings.phone],
+      metadata: Map<String, dynamic>.from(profile[DbStrings.metadata] ?? {}),
+      createdAt: DateTime.parse(profile[DbStrings.createdAt]),
+      updatedAt: DateTime.parse(profile[DbStrings.updatedAt]),
+    );
+  }
+
+  /// Creates a new user profile in the database
+  /// Also creates user_apps record for the current app
+  Future<void> createUserProfile(String userId, String email, String fullName) async {
+    try {
+      // Create users record
+      await _client.from(DbStrings.usersTable).insert({
+        DbStrings.id: userId,
+        DbStrings.email: email,
+        DbStrings.fullName: fullName,
+        DbStrings.role: AppConfig.defaultRole,
+        DbStrings.isActive: true,
+        DbStrings.metadata: {},
+      });
+
+      // Create user_apps record
+      await _createUserAppRecord(userId);
     } catch (e) {
-      log('OTP verification error: $e', name: 'SupabaseAuthRemoteDataSource', level: 900, error: e);
-      rethrow; // Let NetworkExceptions handle error translation
+      throw _AuthException(ErrorStrings.createProfileFailed(e.toString()));
     }
   }
+
+  // ========== Private Methods ==========
+
+  Future<Map<String, dynamic>?> _fetchUserProfile(String userId, {bool required = false}) async {
+    final profile = await _client
+        .from(DbStrings.usersTable)
+        .select()
+        .eq(DbStrings.id, userId)
+        .maybeSingle();
+
+    if (required && profile == null) {
+      throw _AuthException(ErrorStrings.userProfileNotFound);
+    }
+
+    return profile;
+  }
+
+  /// Ensures user_apps record exists for the current app
+  Future<void> _ensureUserAppRecord(String userId) async {
+    try {
+      final existing = await _client
+          .from(DbStrings.userAppsTable)
+          .select()
+          .eq(DbStrings.userId, userId)
+          .eq(DbStrings.appId, AppConfig.appId)
+          .maybeSingle();
+
+      if (existing == null) {
+        AppLogger.database('Creating user_apps record for user $userId');
+        await _createUserAppRecord(userId);
+      }
+    } catch (e) {
+      AppLogger.error('Failed to ensure user_apps record: $e', name: 'UserProfileRepository');
+      // Don't throw - this is a non-critical operation
+    }
+  }
+
+  /// Creates user_apps record for the current app
+  Future<void> _createUserAppRecord(String userId) async {
+    await _client.from(DbStrings.userAppsTable).insert({
+      DbStrings.userId: userId,
+      DbStrings.appId: AppConfig.appId,
+      DbStrings.role: AppConfig.defaultRole,
+      DbStrings.isActive: true,
+      DbStrings.metadata: {},
+    });
+    AppLogger.database('Created user_apps record for user $userId, app ${AppConfig.appId}');
+  }
+
+  SupabaseUserModel _mapToUserModel(User user, Map<String, dynamic> profile, String email) =>
+      SupabaseUserModel(
+        id: user.id,
+        email: user.email ?? email,
+        fullName: profile[DbStrings.fullName] ?? AuthConstStrings.defaultUserName,
+        emailVerified: user.emailConfirmedAt != null,
+        avatarUrl: profile[DbStrings.avatarUrl],
+        phoneNumber: profile[DbStrings.phone],
+        metadata: Map<String, dynamic>.from(profile[DbStrings.metadata] ?? {}),
+        createdAt: DateTime.parse(profile[DbStrings.createdAt]),
+        updatedAt: DateTime.parse(profile[DbStrings.updatedAt]),
+      );
+}
+
+/// Custom auth exception
+class _AuthException implements Exception {
+  final String message;
+  _AuthException(this.message);
+
+  @override
+  String toString() => message;
 }

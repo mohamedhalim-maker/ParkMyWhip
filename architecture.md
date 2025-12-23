@@ -3,6 +3,15 @@
 ## Overview
 ParkMyWhip is a Flutter mobile application for parking enforcement management. It follows **Clean Architecture** principles with a **feature-first** folder structure under `lib/src/features/`. Each feature is self-contained with its own data models, presentation logic (Cubits), and UI components. Shared utilities, theming, routing, and reusable widgets live under `lib/src/core/` and are accessible to all features.
 
+> **📚 Detailed Documentation**: For comprehensive documentation, see the `docs/` folder:
+> - **[Core Module](./docs/core.md)** - Complete core infrastructure guide
+> - **[State Management](./docs/state-management.md)** - In-depth Cubit pattern guide
+> - **[Data Layer](./docs/data-layer.md)** - Models, serialization, and data sources
+> - **[Supabase Integration](./docs/supabase-integration.md)** - Backend setup and usage
+> - **[Auth Feature](./docs/features/auth-feature.md)** - Authentication system guide
+> - **[Home Feature](./docs/features/home-feature.md)** - Dashboard and sub-features guide
+> - **[Documentation Index](./docs/README.md)** - Complete documentation overview
+
 ---
 
 ## Project Structure

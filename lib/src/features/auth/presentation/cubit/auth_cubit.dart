@@ -1,24 +1,28 @@
 import 'dart:async';
-import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:park_my_whip/src/core/networking/network_exceptions.dart';
+import 'package:park_my_whip/src/core/config/config.dart';
+import 'package:park_my_whip/src/core/constants/strings.dart';
+import 'package:park_my_whip/src/core/data/result.dart';
+import 'package:park_my_whip/src/core/helpers/app_logger.dart';
+import 'package:park_my_whip/src/core/models/email_check_result.dart';
 import 'package:park_my_whip/src/core/routes/names.dart';
-import 'package:park_my_whip/src/core/services/supabase_user_service.dart';
-import 'package:park_my_whip/src/features/auth/data/data_sources/auth_remote_data_source.dart';
+import 'package:park_my_whip/src/features/auth/domain/repositories/auth_repository.dart';
 import 'package:park_my_whip/src/features/auth/domain/validators.dart';
 import 'auth_state.dart' as app_auth;
 
+/// AuthCubit handles authentication UI logic and state management.
+/// It delegates all data operations to AuthRepository (Single Responsibility).
 class AuthCubit extends Cubit<app_auth.AuthState> {
   AuthCubit({
-    required this.validators,
-    required this.supabaseUserService,
-    required this.authRemoteDataSource,
-  }) : super(const app_auth.AuthState());
+    required AuthRepository authRepository,
+    required Validators validators,
+  })  : _authRepository = authRepository,
+        _validators = validators,
+        super(const app_auth.AuthState());
 
-  final Validators validators;
-  final SupabaseUserService supabaseUserService;
-  final AuthRemoteDataSource authRemoteDataSource;
+  final AuthRepository _authRepository;
+  final Validators _validators;
   
   // Timers for resend countdowns
   Timer? _resendTimer;
@@ -27,27 +31,29 @@ class AuthCubit extends Cubit<app_auth.AuthState> {
   // Text controllers for signup form
   final TextEditingController signUpNameController = TextEditingController();
   final TextEditingController signUpEmailController = TextEditingController();
-  final TextEditingController signUpPasswordController =
-      TextEditingController();
-  final TextEditingController signUpConfirmPasswordController =
-      TextEditingController();
+  final TextEditingController signUpPasswordController = TextEditingController();
+  final TextEditingController signUpConfirmPasswordController = TextEditingController();
+  
   // Text controllers for create password form
-  final TextEditingController createPasswordController =
-      TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+  final TextEditingController createPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
+  
   // Text controllers for otp form
   final TextEditingController otpController = TextEditingController();
+  
   // Text controllers for login form
   final TextEditingController loginEmailController = TextEditingController();
   final TextEditingController loginPasswordController = TextEditingController();
+  
   // Text controllers for forgot password form
   final TextEditingController forgotPasswordEmailController = TextEditingController();
+  
   // Text controllers for reset password form
   final TextEditingController resetPasswordController = TextEditingController();
   final TextEditingController resetConfirmPasswordController = TextEditingController();
 
-  // Update button state when field changes
+  // ==================== Sign Up ====================
+
   void onSignUpFieldChanged() {
     final hasName = signUpNameController.text.trim().isNotEmpty;
     final hasEmail = signUpEmailController.text.trim().isNotEmpty;
@@ -57,57 +63,80 @@ class AuthCubit extends Cubit<app_auth.AuthState> {
     }
   }
 
-  // Validate signup form on continue button press (Step 1: Name + Email → Navigate to Create Password)
   Future<void> validateSignupForm({required BuildContext context}) async {
-    final nameError = validators.nameValidator(
-      signUpNameController.text.trim(),
-    );
-    final emailError = validators.emailValidator(
-      signUpEmailController.text.trim(),
-    );
+    final nameError = _validators.nameValidator(signUpNameController.text.trim());
+    final emailError = _validators.emailValidator(signUpEmailController.text.trim());
 
     if (nameError != null || emailError != null) {
-      emit(
-        state.copyWith(
-          signUpNameError: nameError,
-          signUpEmailError: emailError,
-        ),
-      );
+      emit(state.copyWith(
+        signUpNameError: nameError,
+        signUpEmailError: emailError,
+      ));
       return;
     }
 
-    // If no errors, navigate to create password page
     emit(state.copyWith(
+      isLoading: true,
       signUpNameError: null,
       signUpEmailError: null,
       errorMessage: null,
     ));
-    
-    if (context.mounted) {
-      Navigator.pushNamed(context, RoutesName.createPassword);
+
+    // Check if email already exists for this app
+    final email = signUpEmailController.text.trim();
+    final result = await _authRepository.checkEmailForApp(
+      email: email,
+      appId: AppConfig.appId,
+    );
+
+    switch (result) {
+      case Success(:final data):
+        switch (data.status) {
+          case EmailCheckStatus.userNotFound:
+            // User doesn't exist - can proceed with sign up
+            AppLogger.auth('Email not found, proceeding with sign up');
+            emit(state.copyWith(isLoading: false));
+            if (context.mounted) {
+              Navigator.pushNamed(context, RoutesName.createPassword);
+            }
+          case EmailCheckStatus.userExistsWithAppAccess:
+            // User exists and has app access - should login instead
+            AppLogger.auth('User already exists with app access');
+            emit(state.copyWith(isLoading: false, errorMessage: ErrorStrings.accountAlreadyExists));
+          case EmailCheckStatus.userExistsNoAppAccess:
+            // User exists but no app access - redirect to login to link account
+            AppLogger.auth('User exists but no app access - redirecting to login');
+            // Pre-fill login email so user doesn't have to re-enter
+            loginEmailController.text = email;
+            // Emit state with the info message, then navigate
+            emit(state.copyWith(isLoading: false, loginGeneralError: ErrorStrings.noAppAccess));
+            if (context.mounted) {
+              Navigator.pushNamed(context, RoutesName.login);
+            }
+        }
+      case Failure(:final message):
+        AppLogger.auth('Email check failed: $message');
+        emit(state.copyWith(isLoading: false, errorMessage: message));
     }
   }
 
-  // Clear form errors
   void clearErrors() {
     emit(state.copyWith(signUpNameError: null, signUpEmailError: null));
   }
 
-  // navigate to login page
   void navigateToLoginPage({required BuildContext context}) {
     Navigator.pushNamed(context, RoutesName.login);
   }
-  //********************************************** otp ************************** */
+
+  // ==================== OTP ====================
 
   void onOtpFieldChanged({required String text}) {
-    final hasOtp = text.length == 6;
-    final shouldEnable = hasOtp;
+    final shouldEnable = text.length == 6;
     if (state.isOtpButtonEnabled != shouldEnable) {
       emit(state.copyWith(isOtpButtonEnabled: shouldEnable));
     }
   }
 
-  // Validate otp form on continue button press (Step 3: Verify OTP → Navigate to Dashboard)
   Future<void> continueFromOTPPage({required BuildContext context}) async {
     final otp = otpController.text.trim();
     
@@ -116,123 +145,91 @@ class AuthCubit extends Cubit<app_auth.AuthState> {
       return;
     }
 
-    try {
-      // Clear previous errors and show loading
-      emit(state.copyWith(
-        isLoading: true,
-        otpError: null,
-      ));
+    emit(state.copyWith(isLoading: true, otpError: null));
 
-      final email = signUpEmailController.text.trim();
+    final email = signUpEmailController.text.trim();
+    final result = await _authRepository.verifyOtpAndCompleteSignup(
+      email: email,
+      otp: otp,
+    );
 
-      // Call data source to verify OTP and complete signup
-      final supabaseUser = await authRemoteDataSource.verifyOtpAndCompleteSignup(
-        email: email,
-        otp: otp,
-      );
-
-      log('Signup completed successfully. User: ${supabaseUser.id}', name: 'AuthCubit', level: 1000);
-
-      // Save user data to local storage
-      await supabaseUserService.cacheUser(supabaseUser);
-
-      emit(state.copyWith(isLoading: false));
-
-      if (context.mounted) {
-        Navigator.pushReplacementNamed(context, RoutesName.dashboard);
-      }
-    } catch (e) {
-      log('OTP verification error: $e', name: 'AuthCubit', level: 900, error: e);
-      final errorMessage = NetworkExceptions.getSupabaseExceptionMessage(e);
-      emit(state.copyWith(
-        isLoading: false,
-        otpError: errorMessage,
-      ));
+    switch (result) {
+      case Success(:final data):
+        AppLogger.auth('Signup completed successfully. User: ${data.id}');
+        emit(state.copyWith(isLoading: false));
+        if (context.mounted) {
+          Navigator.pushReplacementNamed(context, RoutesName.dashboard);
+        }
+      case Failure(:final message):
+        AppLogger.auth('OTP verification failed: $message');
+        emit(state.copyWith(isLoading: false, otpError: message));
     }
   }
-  //********************************************** create password ************************** */
+
+  // ==================== Create Password ====================
 
   void onCreatePasswordFieldChanged() {
     final hasPassword = createPasswordController.text.trim().isNotEmpty;
     final hasConfirmPassword = confirmPasswordController.text.trim().isNotEmpty;
     final shouldEnable = hasPassword && hasConfirmPassword;
     
-    // Update button state and trigger rebuild for validation rules
-    if (state.isCreatePasswordButtonEnabled != shouldEnable) {
-      emit(state.copyWith(
-        isCreatePasswordButtonEnabled: shouldEnable,
-        createPasswordFieldTrigger: state.createPasswordFieldTrigger + 1,
-      ));
-    } else {
-      // Trigger rebuild for validation rules even if button state unchanged
-      emit(state.copyWith(
-        createPasswordFieldTrigger: state.createPasswordFieldTrigger + 1,
-      ));
-    }
+    emit(state.copyWith(
+      isCreatePasswordButtonEnabled: shouldEnable,
+      createPasswordFieldTrigger: state.createPasswordFieldTrigger + 1,
+    ));
   }
 
   Future<void> validateCreatePasswordForm({required BuildContext context}) async {
-    final createPasswordError = validators.passwordValidator(
+    final createPasswordError = _validators.passwordValidator(
       createPasswordController.text.trim(),
     );
-    final confirmPasswordError = validators.conformPasswordValidator(
+    final confirmPasswordError = _validators.conformPasswordValidator(
       createPasswordController.text.trim(),
       confirmPasswordController.text.trim(),
     );
 
     if (createPasswordError != null || confirmPasswordError != null) {
-      emit(
-        state.copyWith(
-          createPasswordError: createPasswordError,
-          confirmPasswordError: confirmPasswordError,
-        ),
-      );
+      emit(state.copyWith(
+        createPasswordError: createPasswordError,
+        confirmPasswordError: confirmPasswordError,
+      ));
       return;
     }
 
-    // If no errors, create account in Supabase (without sending OTP yet)
-    await createAccount(context: context);
+    await _createAccount(context: context);
   }
 
-  Future<void> createAccount({required BuildContext context}) async {
-    try {
-      // Clear previous errors and show loading
-      emit(state.copyWith(
-        isLoading: true,
-        errorMessage: null,
-        createPasswordError: null,
-        confirmPasswordError: null,
-      ));
+  Future<void> _createAccount({required BuildContext context}) async {
+    emit(state.copyWith(
+      isLoading: true,
+      errorMessage: null,
+      createPasswordError: null,
+      confirmPasswordError: null,
+    ));
 
-      final email = signUpEmailController.text.trim();
-      final password = createPasswordController.text.trim();
-      final fullName = signUpNameController.text.trim();
+    final email = signUpEmailController.text.trim();
+    final password = createPasswordController.text.trim();
+    final fullName = signUpNameController.text.trim();
 
-      // Call data source to create account (without OTP)
-      await authRemoteDataSource.createAccount(
-        email: email,
-        password: password,
-        fullName: fullName,
-      );
+    final result = await _authRepository.createAccount(
+      email: email,
+      password: password,
+      fullName: fullName,
+    );
 
-      log('Account created successfully', name: 'AuthCubit', level: 1000);
-
-      // Navigate to OTP page (OTP will be sent when page loads)
-      emit(state.copyWith(isLoading: false));
-      if (context.mounted) {
-        Navigator.pushNamed(context, RoutesName.enterOtpCode);
-      }
-    } catch (e) {
-      log('Create account error: $e', name: 'AuthCubit', level: 900, error: e);
-      final errorMessage = NetworkExceptions.getSupabaseExceptionMessage(e);
-      emit(state.copyWith(
-        isLoading: false,
-        errorMessage: errorMessage,
-      ));
+    switch (result) {
+      case Success():
+        AppLogger.auth('Account created successfully');
+        emit(state.copyWith(isLoading: false));
+        if (context.mounted) {
+          Navigator.pushNamed(context, RoutesName.enterOtpCode);
+        }
+      case Failure(message: final message):
+        AppLogger.auth('Create account failed: $message');
+        emit(state.copyWith(isLoading: false, errorMessage: message));
     }
   }
 
-  // Start 60-second countdown for OTP resend button
   void startOtpResendCountdown() {
     _otpResendTimer?.cancel();
     emit(state.copyWith(otpResendCountdownSeconds: 60, canResendOtp: false));
@@ -247,62 +244,43 @@ class AuthCubit extends Cubit<app_auth.AuthState> {
     });
   }
 
-  // Send OTP when OTP page loads
   Future<void> sendOtpOnPageLoad({required BuildContext context}) async {
-    try {
-      emit(state.copyWith(
-        isLoading: true,
-        otpError: null,
-      ));
+    emit(state.copyWith(isLoading: true, otpError: null));
 
-      final email = signUpEmailController.text.trim();
-      await authRemoteDataSource.sendOtpForEmailVerification(email: email);
+    final email = signUpEmailController.text.trim();
+    final result = await _authRepository.sendOtpForEmailVerification(email: email);
 
-      log('OTP sent to $email', name: 'AuthCubit', level: 1000);
-      
-      // Start countdown timer
-      startOtpResendCountdown();
-      
-      emit(state.copyWith(isLoading: false));
-    } catch (e) {
-      log('Send OTP error: $e', name: 'AuthCubit', level: 900, error: e);
-      final errorMessage = NetworkExceptions.getSupabaseExceptionMessage(e);
-      emit(state.copyWith(
-        isLoading: false,
-        otpError: errorMessage,
-      ));
+    switch (result) {
+      case Success():
+        AppLogger.auth('OTP sent to $email');
+        startOtpResendCountdown();
+        emit(state.copyWith(isLoading: false));
+      case Failure(message: final message):
+        AppLogger.auth('Send OTP failed: $message');
+        emit(state.copyWith(isLoading: false, otpError: message));
     }
   }
 
-  // Resend OTP for email verification
   Future<void> resendOtp({required BuildContext context}) async {
-    try {
-      emit(state.copyWith(
-        isLoading: true,
-        otpError: null,
-      ));
+    emit(state.copyWith(isLoading: true, otpError: null));
 
-      final email = signUpEmailController.text.trim();
-      await authRemoteDataSource.sendOtpForEmailVerification(email: email);
+    final email = signUpEmailController.text.trim();
+    final result = await _authRepository.sendOtpForEmailVerification(email: email);
 
-      log('OTP resent to $email', name: 'AuthCubit', level: 1000);
-      
-      // Restart countdown timer
-      startOtpResendCountdown();
-      
-      emit(state.copyWith(isLoading: false));
-    } catch (e) {
-      log('Resend OTP error: $e', name: 'AuthCubit', level: 900, error: e);
-      final errorMessage = NetworkExceptions.getSupabaseExceptionMessage(e);
-      emit(state.copyWith(
-        isLoading: false,
-        otpError: errorMessage,
-      ));
+    switch (result) {
+      case Success():
+        AppLogger.auth('OTP resent to $email');
+        startOtpResendCountdown();
+        emit(state.copyWith(isLoading: false));
+      case Failure(message: final message):
+        AppLogger.auth('Resend OTP failed: $message');
+        emit(state.copyWith(isLoading: false, otpError: message));
     }
   }
 
-  //************************************ login ************************** */
-  navigateToSignUpPage({required BuildContext context}) {
+  // ==================== Login ====================
+
+  void navigateToSignUpPage({required BuildContext context}) {
     Navigator.pushNamed(context, RoutesName.signup);
   }
 
@@ -316,67 +294,48 @@ class AuthCubit extends Cubit<app_auth.AuthState> {
   }
 
   Future<void> validateLoginForm({required BuildContext context}) async {
-    final emailError = validators.emailValidator(
-      loginEmailController.text.trim(),
-    );
-    final passwordError = validators.loginPasswordValidator(
-      loginPasswordController.text.trim(),
-    );
+    final emailError = _validators.emailValidator(loginEmailController.text.trim());
+    final passwordError = _validators.loginPasswordValidator(loginPasswordController.text.trim());
 
     if (emailError != null || passwordError != null) {
-      emit(
-        state.copyWith(
-          loginEmailError: emailError,
-          loginPasswordError: passwordError,
-        ),
-      );
+      emit(state.copyWith(
+        loginEmailError: emailError,
+        loginPasswordError: passwordError,
+      ));
       return;
     }
 
-    // If no validation errors, proceed with Supabase login
-    await loginWithSupabase(context: context);
+    await _loginWithSupabase(context: context);
   }
 
-  Future<void> loginWithSupabase({required BuildContext context}) async {
-    try {
-      // Clear previous errors and show loading
-      emit(state.copyWith(
-        isLoading: true,
-        loginGeneralError: null,
-        loginEmailError: null,
-        loginPasswordError: null,
-      ));
+  Future<void> _loginWithSupabase({required BuildContext context}) async {
+    emit(state.copyWith(
+      isLoading: true,
+      clearLoginGeneralError: true,
+      loginEmailError: null,
+      loginPasswordError: null,
+    ));
 
-      final email = loginEmailController.text.trim();
-      final password = loginPasswordController.text.trim();
+    final email = loginEmailController.text.trim();
+    final password = loginPasswordController.text.trim();
 
-      // Call data source to handle all backend logic
-      final supabaseUser = await authRemoteDataSource.loginWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+    final result = await _authRepository.login(email: email, password: password);
 
-      log('User logged in successfully: ${supabaseUser.id}', name: 'AuthCubit', level: 1000);
-
-      // Save user data to local storage
-      await supabaseUserService.cacheUser(supabaseUser);
-
-      // Navigate to dashboard
-      emit(state.copyWith(isLoading: false));
-      if (context.mounted) {
-        Navigator.pushReplacementNamed(context, RoutesName.dashboard);
-      }
-    } catch (e) {
-      log('Login error: $e', name: 'AuthCubit', level: 900, error: e);
-      final errorMessage = NetworkExceptions.getSupabaseExceptionMessage(e);
-      emit(state.copyWith(
-        isLoading: false,
-        loginGeneralError: errorMessage,
-      ));
+    switch (result) {
+      case Success(:final data):
+        AppLogger.auth('User logged in successfully: ${data.id}');
+        emit(state.copyWith(isLoading: false));
+        if (context.mounted) {
+          Navigator.pushReplacementNamed(context, RoutesName.dashboard);
+        }
+      case Failure(:final message):
+        AppLogger.auth('Login failed: $message');
+        emit(state.copyWith(isLoading: false, loginGeneralError: message));
     }
   }
 
-  //************************************ forgot password ************************** */
+  // ==================== Forgot Password ====================
+
   void navigateToForgotPasswordPage({required BuildContext context}) {
     Navigator.pushNamed(context, RoutesName.forgotPassword);
   }
@@ -389,47 +348,36 @@ class AuthCubit extends Cubit<app_auth.AuthState> {
   }
 
   Future<void> validateForgotPasswordForm({required BuildContext context}) async {
-    final emailError = validators.emailValidator(
-      forgotPasswordEmailController.text.trim(),
-    );
+    final emailError = _validators.emailValidator(forgotPasswordEmailController.text.trim());
 
     if (emailError != null) {
       emit(state.copyWith(forgotPasswordEmailError: emailError));
       return;
     }
 
-    await sendPasswordResetEmail(context: context);
+    await _sendPasswordResetEmail(context: context);
   }
 
-  Future<void> sendPasswordResetEmail({required BuildContext context}) async {
-    try {
-      emit(state.copyWith(
-        isLoading: true,
-        forgotPasswordEmailError: null,
-      ));
+  Future<void> _sendPasswordResetEmail({required BuildContext context}) async {
+    emit(state.copyWith(isLoading: true, forgotPasswordEmailError: null));
 
-      final email = forgotPasswordEmailController.text.trim();
-      await authRemoteDataSource.sendPasswordResetEmail(email: email);
+    final email = forgotPasswordEmailController.text.trim();
+    final result = await _authRepository.sendPasswordResetEmail(email: email);
 
-      log('Password reset email sent to $email', name: 'AuthCubit', level: 800);
-      emit(state.copyWith(isLoading: false));
-
-      if (context.mounted) {
-        // Start countdown timer when navigating to success page
-        startResendCountdown();
-        Navigator.pushNamed(context, RoutesName.resetLinkSent);
-      }
-    } catch (e) {
-      log('Password reset email error: $e', name: 'AuthCubit', level: 900, error: e);
-      final errorMessage = NetworkExceptions.getSupabaseExceptionMessage(e);
-      emit(state.copyWith(
-        isLoading: false,
-        forgotPasswordEmailError: errorMessage,
-      ));
+    switch (result) {
+      case Success():
+        AppLogger.auth('Password reset email sent to $email');
+        emit(state.copyWith(isLoading: false));
+        if (context.mounted) {
+          startResendCountdown();
+          Navigator.pushNamed(context, RoutesName.resetLinkSent);
+        }
+      case Failure(message: final message):
+        AppLogger.auth('Password reset email failed: $message');
+        emit(state.copyWith(isLoading: false, forgotPasswordEmailError: message));
     }
   }
 
-  // Start 60-second countdown for resend button
   void startResendCountdown() {
     _resendTimer?.cancel();
     emit(state.copyWith(resendCountdownSeconds: 60, canResendEmail: false));
@@ -444,111 +392,81 @@ class AuthCubit extends Cubit<app_auth.AuthState> {
     });
   }
 
-  // Resend password reset email
   Future<void> resendPasswordResetEmail({required BuildContext context}) async {
-    await sendPasswordResetEmail(context: context);
+    await _sendPasswordResetEmail(context: context);
   }
 
-  // Navigate from reset link sent page back to login
   void navigateFromResetLinkToLogin({required BuildContext context}) {
-    // Pop back to login, removing forgot password and reset link sent pages
     Navigator.popUntil(context, (route) => route.isFirst);
   }
 
-  // Navigate from password reset success page to login
   void navigateFromResetSuccessToLogin({required BuildContext context}) {
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      RoutesName.login,
-      (route) => false,
-    );
+    Navigator.pushNamedAndRemoveUntil(context, RoutesName.login, (route) => false);
   }
 
-  // Format countdown seconds to MM:SS format
   static String formatCountdownTime(int seconds) {
     final minutes = seconds ~/ 60;
     final secs = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 
-  //************************************ reset password ************************** */
+  // ==================== Reset Password ====================
+
   void onResetPasswordFieldChanged() {
     final hasPassword = resetPasswordController.text.trim().isNotEmpty;
     final hasConfirmPassword = resetConfirmPasswordController.text.trim().isNotEmpty;
     final shouldEnable = hasPassword && hasConfirmPassword;
     
-    // Only update button state and trigger rebuild for validation rules
-    // DON'T clear errors - they should persist until next validation
-    if (state.isResetPasswordButtonEnabled != shouldEnable) {
-      emit(state.copyWith(
-        isResetPasswordButtonEnabled: shouldEnable,
-        resetPasswordFieldTrigger: state.resetPasswordFieldTrigger + 1,
-      ));
-    } else {
-      // Trigger rebuild for validation rules even if button state unchanged
-      emit(state.copyWith(
-        resetPasswordFieldTrigger: state.resetPasswordFieldTrigger + 1,
-      ));
-    }
+    emit(state.copyWith(
+      isResetPasswordButtonEnabled: shouldEnable,
+      resetPasswordFieldTrigger: state.resetPasswordFieldTrigger + 1,
+    ));
   }
 
   Future<void> validateResetPasswordForm({required BuildContext context}) async {
-    final passwordError = validators.passwordValidator(
-      resetPasswordController.text.trim(),
-    );
-    final confirmPasswordError = validators.conformPasswordValidator(
+    final passwordError = _validators.passwordValidator(resetPasswordController.text.trim());
+    final confirmPasswordError = _validators.conformPasswordValidator(
       resetPasswordController.text.trim(),
       resetConfirmPasswordController.text.trim(),
     );
 
     if (passwordError != null || confirmPasswordError != null) {
-      emit(
-        state.copyWith(
-          resetPasswordError: passwordError,
-          resetConfirmPasswordError: confirmPasswordError,
-        ),
-      );
+      emit(state.copyWith(
+        resetPasswordError: passwordError,
+        resetConfirmPasswordError: confirmPasswordError,
+      ));
       return;
     }
 
-    // Submit new password to Supabase
-    await submitPasswordReset(context: context);
+    await _submitPasswordReset(context: context);
   }
 
-  Future<void> submitPasswordReset({required BuildContext context}) async {
-    try {
-      emit(state.copyWith(
-        isLoading: true,
-        resetPasswordError: null,
-        resetConfirmPasswordError: null,
-      ));
+  Future<void> _submitPasswordReset({required BuildContext context}) async {
+    emit(state.copyWith(
+      isLoading: true,
+      resetPasswordError: null,
+      resetConfirmPasswordError: null,
+    ));
 
-      final newPassword = resetPasswordController.text.trim();
-      
-      // Call data source to update password
-      await authRemoteDataSource.updatePassword(newPassword: newPassword);
+    final newPassword = resetPasswordController.text.trim();
+    final result = await _authRepository.updatePassword(newPassword: newPassword);
 
-      log('Password reset successful', name: 'AuthCubit', level: 1000);
-      emit(state.copyWith(isLoading: false));
-
-      if (context.mounted) {
-        // Navigate to success page after successful password reset
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          RoutesName.passwordResetSuccess,
-          (route) => false,
-        );
-      }
-    } catch (e) {
-      log('Password update error: $e', name: 'AuthCubit', level: 900, error: e);
-      final errorMessage = NetworkExceptions.getSupabaseExceptionMessage(e);
-      emit(state.copyWith(
-        isLoading: false,
-        resetPasswordError: errorMessage,
-      ));
+    switch (result) {
+      case Success():
+        AppLogger.auth('Password reset successful');
+        emit(state.copyWith(isLoading: false));
+        if (context.mounted) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            RoutesName.passwordResetSuccess,
+            (route) => false,
+          );
+        }
+      case Failure(message: final message):
+        AppLogger.auth('Password update failed: $message');
+        emit(state.copyWith(isLoading: false, resetPasswordError: message));
     }
   }
-
 
   @override
   Future<void> close() {

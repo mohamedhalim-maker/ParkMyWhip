@@ -1,6 +1,6 @@
-import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:park_my_whip/src/core/helpers/app_logger.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:park_my_whip/src/core/config/injection.dart';
@@ -127,7 +127,7 @@ class TowCubit extends Cubit<TowState> {
         emit(state.copyWith(isImageLoading: false));
       }
     } catch (e) {
-      log('Error picking image: $e', name: 'TowCubit', level: 900, error: e);
+      AppLogger.error('Error picking image', name: 'TowCubit', error: e);
       emit(state.copyWith(isImageLoading: false));
     }
   }
@@ -174,7 +174,7 @@ class TowCubit extends Cubit<TowState> {
       final plateNumber = state.towingEntry?.plateNumber ?? 'Unknown';
       
       // TODO: Replace with actual repository call to save towing entry
-      log('Towing entry confirmed: ${state.towingEntry?.toJson()}', name: 'TowCubit', level: 1000);
+      AppLogger.success('Towing entry confirmed: ${state.towingEntry?.toJson()}', name: 'TowCubit');
 
       emit(state.copyWith(
         isLoading: false,
@@ -183,7 +183,7 @@ class TowCubit extends Cubit<TowState> {
         currentPhase: 6,
       ));
     } catch (e) {
-      log('Error confirming towing: $e', name: 'TowCubit', level: 900, error: e);
+      AppLogger.error('Error confirming towing', name: 'TowCubit', error: e);
       emit(state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to confirm towing: ${e.toString()}',

@@ -68,6 +68,49 @@ class SharedPrefStrings {
   static const String supabaseUserProfile = 'supabase_user_profile';
 }
 
+// ========== Database Strings ==========
+class DbStrings {
+  // Table names
+  static const String usersTable = 'users';
+  static const String appsTable = 'apps';
+  static const String userAppsTable = 'user_apps';
+
+  // Column names
+  static const String id = 'id';
+  static const String email = 'email';
+  static const String fullName = 'full_name';
+  static const String avatarUrl = 'avatar_url';
+  static const String phone = 'phone';
+  static const String role = 'role';
+  static const String isActive = 'is_active';
+  static const String metadata = 'metadata';
+  static const String createdAt = 'created_at';
+  static const String updatedAt = 'updated_at';
+
+  // user_apps columns
+  static const String userId = 'user_id';
+  static const String appId = 'app_id';
+
+  // RPC function names
+  static const String getUserByEmailWithAppCheck = 'get_user_by_email_with_app_check';
+}
+
+// ========== Auth Constants ==========
+class AuthConstStrings {
+  static const String defaultUserName = 'User';
+  static const String defaultRole = 'user';
+  static const String passwordResetDeepLink = 'parkmywhip://reset-password';
+}
+
+// ========== Error Messages ==========
+class ErrorStrings {
+  static const String authFailed = 'Authentication failed. No user returned.';
+  static const String userProfileNotFound = 'User profile not found';
+  static String createProfileFailed(String error) => 'Failed to create user profile: $error';
+  static const String accountAlreadyExists = 'An account with this email already exists. Please sign in instead.';
+  static const String noAppAccess = 'You already have an account. Please login with your existing password to access this app.';
+}
+
 class HomeStrings {
   // patrol
   static const String greeting = 'Good Morning,';

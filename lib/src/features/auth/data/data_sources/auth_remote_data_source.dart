@@ -1,8 +1,16 @@
+import 'package:park_my_whip/src/core/models/email_check_result.dart';
 import 'package:park_my_whip/src/core/models/supabase_user_model.dart';
 
 /// Abstract contract for authentication remote data source
 /// All backend auth operations go through this interface
 abstract class AuthRemoteDataSource {
+  /// Check if email exists and has app access
+  /// Uses RPC function to check both user and user_apps tables
+  Future<EmailCheckResult> checkEmailForApp({
+    required String email,
+    required String appId,
+  });
+
   /// Login with email and password
   /// Returns [SupabaseUserModel] on success
   /// Throws exception on failure

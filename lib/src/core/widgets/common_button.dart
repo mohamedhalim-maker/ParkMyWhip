@@ -10,6 +10,7 @@ class CommonButton extends StatelessWidget {
     required this.text,
     required this.onPressed,
     this.isEnabled = true,
+    this.isLoading = false,
     this.leadingIcon,
     this.trailingIcon,
     this.color,
@@ -18,20 +19,21 @@ class CommonButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
   final bool isEnabled;
+  final bool isLoading;
   final IconData? leadingIcon;
   final IconData? trailingIcon;
   final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final effectiveEnabled = isEnabled && !isLoading;
     return SizedBox(
       height: 48.h,
-
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: isEnabled ? onPressed : null,
+        onPressed: effectiveEnabled ? onPressed : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isEnabled
+          backgroundColor: effectiveEnabled
               ? color ?? AppColor.richRed
               : color?.withValues(alpha: 0.15) ?? AppColor.redLight,
           disabledBackgroundColor: AppColor.redLight,
@@ -41,20 +43,29 @@ class CommonButton extends StatelessWidget {
           padding: EdgeInsets.symmetric(vertical: 11.h),
           elevation: 0,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (leadingIcon != null) ...[
-              Icon(leadingIcon!, color: AppColor.white, size: 24),
-              horizontalSpace(8),
-            ],
-            Text(text, style: AppTextStyles.urbanistFont18WhiteRegular1_375),
-            if (trailingIcon != null) ...[
-              horizontalSpace(8),
-              Icon(trailingIcon!, color: AppColor.white, size: 24),
-            ],
-          ],
-        ),
+        child: isLoading
+            ? SizedBox(
+                height: 24.h,
+                width: 24.h,
+                child: CircularProgressIndicator(
+                  color: AppColor.white,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (leadingIcon != null) ...[
+                    Icon(leadingIcon!, color: AppColor.white, size: 24),
+                    horizontalSpace(8),
+                  ],
+                  Text(text, style: AppTextStyles.urbanistFont18WhiteRegular1_375),
+                  if (trailingIcon != null) ...[
+                    horizontalSpace(8),
+                    Icon(trailingIcon!, color: AppColor.white, size: 24),
+                  ],
+                ],
+              ),
       ),
     );
   }

@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'dart:developer';
 import 'package:flutter/material.dart';
+import 'package:park_my_whip/src/core/helpers/app_logger.dart';
 import 'package:park_my_whip/src/core/routes/router.dart';
 import 'package:park_my_whip/src/core/widgets/error_dialog.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,7 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 abstract class NetworkExceptions {
   /// Takes a Supabase exception and returns a user-friendly error message
   static String getSupabaseExceptionMessage(dynamic error) {
-    log('Processing error: $error', name: 'NetworkExceptions', level: 900, error: error);
+    AppLogger.error('Processing network error', name: 'NetworkExceptions', error: error);
 
     // Network connectivity issues
     if (error is SocketException) {
@@ -50,7 +50,7 @@ abstract class NetworkExceptions {
     final message = error.message.toLowerCase();
     final statusCode = error.statusCode;
 
-    log('Auth error - Code: $statusCode, Message: ${error.message}', name: 'NetworkExceptions', level: 900);
+    AppLogger.warning('Auth error - Code: $statusCode, Message: ${error.message}', name: 'NetworkExceptions');
 
     // Common auth error patterns
     if (message.contains('invalid login credentials') ||
@@ -159,7 +159,7 @@ abstract class NetworkExceptions {
     final message = error.message?.toLowerCase() ?? '';
     final code = error.code;
 
-    log('Database error - Code: $code, Message: ${error.message}', name: 'NetworkExceptions', level: 900);
+    AppLogger.warning('Database error - Code: $code, Message: ${error.message}', name: 'NetworkExceptions');
 
     if (code == '23505') {
       return 'This record already exists in the database.';
@@ -197,7 +197,7 @@ abstract class NetworkExceptions {
     final message = error.message?.toLowerCase() ?? '';
     final statusCode = error.statusCode;
 
-    log('Storage error - Code: $statusCode, Message: ${error.message}', name: 'NetworkExceptions', level: 900);
+    AppLogger.warning('Storage error - Code: $statusCode, Message: ${error.message}', name: 'NetworkExceptions');
 
     if (statusCode == '404' || message.contains('not found')) {
       return 'File not found in storage.';
@@ -240,7 +240,7 @@ abstract class NetworkExceptions {
   }) {
     final context = AppRouter.navigatorKey.currentContext;
     if (context == null) {
-      log('Cannot show dialog - no context available', name: 'NetworkExceptions', level: 900);
+      AppLogger.warning('Cannot show error dialog - no context available', name: 'NetworkExceptions');
       return;
     }
 
